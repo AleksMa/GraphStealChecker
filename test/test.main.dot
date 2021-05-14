@@ -1,0 +1,63 @@
+digraph G {
+  rankdir=TB;
+  node [style="filled", ];
+  102 [label="Decl input", fillcolor="#FFEFD5", shape=box, ];
+  103 [label="Decl res", fillcolor="#FFEFD5", shape=box, ];
+  104 [label="Decl sign", fillcolor="#FFEFD5", shape=box, ];
+  105 [label="Decl __retres", fillcolor="#FFEFD5", shape=box, ];
+  106 [label="int res = 0;", fillcolor="#CCCCCC", shape=box, ];
+  107 [label="int sign = 1;", fillcolor="#CCCCCC", shape=box, ];
+  108 [label="while", fillcolor="#CCCCCC", shape=doublecircle, ];
+  109 [label="(int)*input == ' '", fillcolor="#CCCCCC", shape=diamond, ];
+  110 [label="(int)*input == '\\t'", fillcolor="#CCCCCC", shape=diamond, ];
+  111 [label="break;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  112 [label="(int)*input == '-'", fillcolor="#CCCCCC", shape=diamond, ];
+  113 [label="(int)*input == '+'", fillcolor="#CCCCCC", shape=diamond, ];
+  114 [label="while", fillcolor="#CCCCCC", shape=doublecircle, ];
+  115 [label="(int)*input != '\\000'", fillcolor="#CCCCCC", shape=diamond, ];
+  116 [label="{}", fillcolor="#CCCCCC", shape=doublecircle, ];
+  117 [label="(int)*input >= '0'", fillcolor="#CCCCCC", shape=diamond, ];
+  118 [label="(int)*input <= '9'", fillcolor="#CCCCCC", shape=diamond, ];
+  119 [label="goto _LAND;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  120 [label="_LAND:", fillcolor="#CCCCCC", shape=box, ];
+  121 [label="break;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  122 [label="{}", fillcolor="#CCCCCC", shape=doublecircle, ];
+  123 [label="break;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  124 [label="return __retres;", fillcolor="#CCCCCC", shape=box, ];
+  125 [label="OutRet", fillcolor="#90EE90", shape=box, ];
+  
+  
+  edge [dir=back, ];
+  103 -> 106 [color="#000000", style="dotted", ];
+  104 -> 107 [color="#000000", style="dotted", ];
+  102 -> 109 [color="#0000FF", ];
+  102 -> 110 [color="#0000FF", ];
+  102 -> 112 [color="#0000FF", ];
+  102 -> 113 [color="#0000FF", ];
+  116 -> 114 [color="#000000", arrowtail=odot, ];
+  122 -> 114 [color="#000000", arrowtail=odot, ];
+  102 -> 115 [color="#0000FF", ];
+  116 -> 115 [color="#000000", arrowtail=odot, ];
+  122 -> 115 [color="#000000", arrowtail=odot, ];
+  116 -> 116 [color="#000000", arrowtail=odot, ];
+  122 -> 116 [color="#000000", arrowtail=odot, ];
+  102 -> 117 [color="#0000FF", ];
+  116 -> 117 [color="#000000", arrowtail=odot, ];
+  122 -> 117 [color="#000000", arrowtail=odot, ];
+  102 -> 118 [color="#0000FF", ];
+  116 -> 118 [color="#000000", arrowtail=odot, ];
+  122 -> 118 [color="#000000", arrowtail=odot, ];
+  116 -> 119 [color="#000000", arrowtail=odot, ];
+  120 -> 119 [color="#000000", arrowtail=odot, ];
+  122 -> 119 [color="#000000", arrowtail=odot, ];
+  116 -> 120 [color="#000000", arrowtail=odot, ];
+  122 -> 120 [color="#000000", arrowtail=odot, ];
+  116 -> 121 [color="#000000", arrowtail=odot, ];
+  122 -> 121 [color="#000000", arrowtail=odot, ];
+  116 -> 122 [color="#000000", arrowtail=odot, ];
+  122 -> 122 [color="#000000", arrowtail=odot, ];
+  116 -> 123 [color="#000000", arrowtail=odot, ];
+  122 -> 123 [color="#000000", arrowtail=odot, ];
+  105 -> 124 [color="#0000FF", ];
+  
+  }

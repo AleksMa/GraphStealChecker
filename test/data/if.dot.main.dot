@@ -1,0 +1,51 @@
+digraph G {
+  rankdir=TB;
+  node [style="filled", ];
+  11 [label="Decl a", fillcolor="#FFEFD5", shape=box, ];
+  12 [label="Decl __retres", fillcolor="#FFEFD5", shape=box, ];
+  14 [label="In1", fillcolor="#FFCA6E", shape=box, ];
+  15 [label="In2", fillcolor="#FFCA6E", shape=box, ];
+  16 [label="Out(a)", fillcolor="#FFCA6E", shape=box, ];
+  17 [label="a > 0", fillcolor="#CCCCCC", shape=diamond, ];
+  18 [label="{}", fillcolor="#CCCCCC", shape=doublecircle, ];
+  19 [label="{}", fillcolor="#CCCCCC", shape=doublecircle, ];
+  20 [label="__retres = 2;", fillcolor="#CCCCCC", shape=box, ];
+  21 [label="__retres = 1;", fillcolor="#CCCCCC", shape=box, ];
+  22 [label="goto return_label;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  23 [label="return_label:", fillcolor="#CCCCCC", shape=box, ];
+  24 [label="goto return_label;", fillcolor="#CCCCCC", shape=doublecircle, ];
+  25 [label="return_label: return __retres;", fillcolor="#CCCCCC", shape=box, ];
+  26 [label="OutRet", fillcolor="#90EE90", shape=box, ];
+  27 [label="In(a)", fillcolor="#6495ED", shape=box, ];
+  28 [label="In(\"%ld\")", fillcolor="#6495ED", shape=box, ];
+  
+  subgraph cluster_Call1 { label="Call1 : scanf(\"%ld\",& a);";
+                           fillcolor="#B38B4D"; style="filled"; 16;15;14;
+     };
+  
+  edge [dir=back, ];
+  11 -> 15 [color="#0000FF", ];
+  27 -> 16 [color="#0000FF", ];
+  28 -> 16 [color="#0000FF", ];
+  11 -> 17 [color="#0000FF", ];
+  16 -> 17 [label="a", color="#0000FF", ];
+  17 -> 18 [color="#000000", arrowtail=odot, ];
+  17 -> 19 [color="#000000", arrowtail=odot, ];
+  12 -> 20 [color="#000000", style="dotted", ];
+  17 -> 20 [color="#000000", arrowtail=odot, ];
+  18 -> 20 [color="#000000", arrowtail=odot, ];
+  12 -> 21 [color="#000000", style="dotted", ];
+  17 -> 21 [color="#000000", arrowtail=odot, ];
+  19 -> 21 [color="#000000", arrowtail=odot, ];
+  17 -> 22 [color="#000000", arrowtail=odot, ];
+  18 -> 22 [color="#000000", arrowtail=odot, ];
+  23 -> 22 [color="#000000", arrowtail=odot, ];
+  17 -> 24 [color="#000000", arrowtail=odot, ];
+  19 -> 24 [color="#000000", arrowtail=odot, ];
+  23 -> 24 [color="#000000", arrowtail=odot, ];
+  12 -> 25 [color="#0000FF", ];
+  20 -> 25 [color="#0000FF", ];
+  21 -> 25 [color="#0000FF", ];
+  25 -> 26 [color="#0000FF", ];
+  
+  }

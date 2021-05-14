@@ -70,7 +70,7 @@ var (
 
 func main() {
 	//pathInput := "./data/test.py"
-	cmd := exec.Command("/Users/a.mamaev/GoLandProjects/CFGStealChecker/parser.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/test.py")
+	cmd := exec.Command("/Users/a.mamaev/GoLandProjects/CFGStealChecker/PyDG/parser.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/test.py")
 	// open the out file for writing
 	outfile, err := os.Create("./data/test.dot")
 	if err != nil {
@@ -119,7 +119,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	b, err := exec.Command("/Users/a.mamaev/GoLandProjects/VF2/run.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph1.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph2.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/res.txt").Output()
+	b, err := exec.Command("/Users/a.mamaev/GoLandProjects/CFGStealChecker/VF2/run.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph1.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph2.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/res.txt").Output()
 	if err != nil {
 		log.Fatal(err)
 	}

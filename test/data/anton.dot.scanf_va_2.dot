@@ -1,0 +1,29 @@
+digraph G {
+  rankdir=TB;
+  node [style="filled", ];
+  36 [label="Decl format", fillcolor="#FFEFD5", shape=box, ];
+  37 [label="In1", fillcolor="#6495ED", shape=box, ];
+  38 [label="Decl param0", fillcolor="#FFEFD5", shape=box, ];
+  39 [label="In2", fillcolor="#6495ED", shape=box, ];
+  40 [label="Out(b)", fillcolor="#90EE90", shape=box, ];
+  41 [label="Out(S___fc_stdin[0].__fc_FILE_data)", fillcolor="#90EE90",
+      shape=box, ];
+  42 [label="OutRet", fillcolor="#90EE90", shape=box, ];
+  43 [label="In(S___fc_stdin[0])", fillcolor="#6495ED", shape=box, ];
+  44 [label="In(\"%ld\")", fillcolor="#6495ED", shape=box, ];
+  
+  
+  edge [dir=back, ];
+  37 -> 36 [color="#000000", style="dotted", ];
+  36 -> 37 [color="#000000", style="dotted", ];
+  39 -> 38 [color="#000000", style="dotted", ];
+  38 -> 39 [color="#000000", style="dotted", ];
+  43 -> 40 [color="#0000FF", ];
+  44 -> 40 [color="#0000FF", ];
+  43 -> 41 [color="#0000FF", ];
+  44 -> 41 [color="#0000FF", ];
+  41 -> 42 [color="#0000FF", ];
+  43 -> 42 [color="#0000FF", ];
+  44 -> 42 [color="#0000FF", ];
+  
+  }

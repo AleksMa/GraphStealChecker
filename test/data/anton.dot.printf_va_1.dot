@@ -1,0 +1,34 @@
+digraph G {
+  rankdir=TB;
+  node [style="filled", ];
+  9 [label="Decl format", fillcolor="#FFEFD5", shape=box, ];
+  10 [label="In1", fillcolor="#6495ED", shape=box, ];
+  11 [label="Decl param0", fillcolor="#FFEFD5", shape=box, ];
+  12 [label="In2", fillcolor="#6495ED", shape=box, ];
+  13 [label="Decl param1", fillcolor="#FFEFD5", shape=box, ];
+  14 [label="In3", fillcolor="#6495ED", shape=box, ];
+  15 [label="Out(S___fc_stdout[0].__fc_FILE_data)", fillcolor="#90EE90",
+      shape=box, ];
+  16 [label="OutRet", fillcolor="#90EE90", shape=box, ];
+  17 [label="In(S___fc_stdout[0])", fillcolor="#6495ED", shape=box, ];
+  18 [label="In(\"%ld %ld\"[bits 0 to 63])", fillcolor="#6495ED", shape=box, ];
+  
+  
+  edge [dir=back, ];
+  10 -> 9 [color="#000000", style="dotted", ];
+  9 -> 10 [color="#000000", style="dotted", ];
+  12 -> 11 [color="#000000", style="dotted", ];
+  11 -> 12 [color="#000000", style="dotted", ];
+  14 -> 13 [color="#000000", style="dotted", ];
+  13 -> 14 [color="#000000", style="dotted", ];
+  12 -> 15 [color="#0000FF", ];
+  14 -> 15 [color="#0000FF", ];
+  17 -> 15 [color="#0000FF", ];
+  18 -> 15 [color="#0000FF", ];
+  12 -> 16 [color="#0000FF", ];
+  14 -> 16 [color="#0000FF", ];
+  15 -> 16 [color="#0000FF", ];
+  17 -> 16 [color="#0000FF", ];
+  18 -> 16 [color="#0000FF", ];
+  
+  }
