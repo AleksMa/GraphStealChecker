@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -69,35 +70,38 @@ var (
 )
 
 func main() {
+	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	//pathInput := "./data/test.py"
-	cmd := exec.Command("/Users/a.mamaev/GoLandProjects/CFGStealChecker/PyDG/parser.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/test.py")
+	cmd := exec.Command(path+"/PyDG/parser.py", path+"/data/test.py")
 	// open the out file for writing
-	outfile, err := os.Create("./data/test.dot")
+
+	pathDot := path + "/data/test.dot"
+	outfile, err := os.Create(pathDot)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer outfile.Close()
 	cmd.Stdout = outfile
 
-	err = cmd.Start(); if err != nil {
+	err = cmd.Start()
+	if err != nil {
 		log.Fatal(err)
 	}
-	err = cmd.Wait(); if err != nil {
+	err = cmd.Wait()
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	pathDot := "./data/test.dot"
 	nodes, err := ParsePDG(pathDot)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	graph := PrintNodes(nodes)
-	pathGraphs := "./data/"
+	pathGraphs := path + "/data/"
 
 	for i := 0; i < 2; i++ {
 		// open output file
-		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i + 1))
+		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -119,7 +123,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	b, err := exec.Command("/Users/a.mamaev/GoLandProjects/CFGStealChecker/VF2/run.py", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph1.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/data/graph2.txt", "/Users/a.mamaev/GoLandProjects/CFGStealChecker/res.txt").Output()
+	b, err := exec.Command(path+"/VF2/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", path+"/res.txt").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
