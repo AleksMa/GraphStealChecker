@@ -8,5 +8,5 @@
 ## Использование
 
 ```bash
-go run main.go
+go build main.go && ./main ./data/test.py ./data/test.py
 ```
