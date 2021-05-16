@@ -1,0 +1,30 @@
+digraph {
+	subgraph sub_0 {
+	}
+	subgraph sub_1 {
+		"dd068bf1-5b8e-42d4-adfe-aaae78632823" [label="ENTER def __at_read_time__()"]
+		"3f3e6841-60e0-4fd7-92ec-2c62eed506cf" [label="a = 2"]
+		"4c49b275-f284-4e39-a9fd-097f83ace7db" [label="b = 3"]
+		"f80c1509-0505-4bfd-8b37-06353047da59" [label="c = a + b"]
+		"d1fefafc-9ca4-4ef4-b662-5b0f6741520f" [label="If c > 3"]
+		"4dd48495-4c37-4ce7-830b-9850e95cd504" [label="CDGRegionNodeType.then_block"]
+		"3bfcced2-a04e-4344-8dd6-ce370fed9842" [label="print(c * a)"]
+		"8fe149cf-fa7e-45f8-8aef-aa12e49b88b4" [label="CDGRegionNodeType.else_block"]
+		"81f9fd42-92c1-4694-8b0d-c23af4ae5681" [label="print(c * b)"]
+		"dd068bf1-5b8e-42d4-adfe-aaae78632823" -> "3f3e6841-60e0-4fd7-92ec-2c62eed506cf" [style=solid]
+		"dd068bf1-5b8e-42d4-adfe-aaae78632823" -> "4c49b275-f284-4e39-a9fd-097f83ace7db" [style=solid]
+		"dd068bf1-5b8e-42d4-adfe-aaae78632823" -> "f80c1509-0505-4bfd-8b37-06353047da59" [style=solid]
+		"dd068bf1-5b8e-42d4-adfe-aaae78632823" -> "d1fefafc-9ca4-4ef4-b662-5b0f6741520f" [style=solid]
+		"d1fefafc-9ca4-4ef4-b662-5b0f6741520f" -> "4dd48495-4c37-4ce7-830b-9850e95cd504" [label=T style=solid]
+		"4dd48495-4c37-4ce7-830b-9850e95cd504" -> "3bfcced2-a04e-4344-8dd6-ce370fed9842" [style=solid]
+		"d1fefafc-9ca4-4ef4-b662-5b0f6741520f" -> "8fe149cf-fa7e-45f8-8aef-aa12e49b88b4" [label=F style=solid]
+		"8fe149cf-fa7e-45f8-8aef-aa12e49b88b4" -> "81f9fd42-92c1-4694-8b0d-c23af4ae5681" [style=solid]
+		"f80c1509-0505-4bfd-8b37-06353047da59" -> "3f3e6841-60e0-4fd7-92ec-2c62eed506cf" [style=dotted]
+		"f80c1509-0505-4bfd-8b37-06353047da59" -> "4c49b275-f284-4e39-a9fd-097f83ace7db" [style=dotted]
+		"d1fefafc-9ca4-4ef4-b662-5b0f6741520f" -> "f80c1509-0505-4bfd-8b37-06353047da59" [style=dotted]
+		"3bfcced2-a04e-4344-8dd6-ce370fed9842" -> "f80c1509-0505-4bfd-8b37-06353047da59" [style=dotted]
+		"3bfcced2-a04e-4344-8dd6-ce370fed9842" -> "3f3e6841-60e0-4fd7-92ec-2c62eed506cf" [style=dotted]
+		"81f9fd42-92c1-4694-8b0d-c23af4ae5681" -> "f80c1509-0505-4bfd-8b37-06353047da59" [style=dotted]
+		"81f9fd42-92c1-4694-8b0d-c23af4ae5681" -> "4c49b275-f284-4e39-a9fd-097f83ace7db" [style=dotted]
+	}
+}

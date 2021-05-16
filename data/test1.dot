@@ -1,0 +1,30 @@
+digraph {
+	subgraph sub_0 {
+	}
+	subgraph sub_1 {
+		"0" [label="ENTER def __at_read_time__()"]
+		"1" [label="a = 2"]
+		"2" [label="b = 3"]
+		"3" [label="c = a + b"]
+		"4" [label="If c > 3"]
+		"5" [label="CDGRegionNodeType.then_block"]
+		"6" [label="print(c * a)"]
+		"7" [label="CDGRegionNodeType.else_block"]
+		"8" [label="print(c * b)"]
+		"0" -> "1" [style=solid]
+		"0" -> "2" [style=solid]
+		"0" -> "3" [style=solid]
+		"0" -> "4" [style=solid]
+		"4" -> "5" [label=T style=solid]
+		"5" -> "6" [style=solid]
+		"4" -> "7" [label=F style=solid]
+		"7" -> "8" [style=solid]
+		"3" -> "1" [style=dotted]
+		"3" -> "2" [style=dotted]
+		"4" -> "3" [style=dotted]
+		"6" -> "3" [style=dotted]
+		"6" -> "1" [style=dotted]
+		"8" -> "3" [style=dotted]
+		"8" -> "2" [style=dotted]
+	}
+}

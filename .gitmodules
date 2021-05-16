@@ -4,3 +4,6 @@
 [submodule "VF2"]
 	path = VF2
 	url = https://github.com/AleksMa/VF2
+[submodule "PyMCIS"]
+	path = PyMCIS
+	url = https://github.com/AleksMa/Python_Maximum_Common_Induced_Subgraph

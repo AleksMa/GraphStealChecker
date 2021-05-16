@@ -70,47 +70,47 @@ var (
 )
 
 func main() {
+	if len(os.Args) < 3 {
+		log.Fatal("usage: ./graph_checker program1 program2")
+	}
+
 	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	//pathInput := "./data/test.py"
-	cmd := exec.Command(path+"/PyDG/parser.py", path+"/data/test.py")
-	// open the out file for writing
-
-	pathDot := path + "/data/test.dot"
-	outfile, err := os.Create(pathDot)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer outfile.Close()
-	cmd.Stdout = outfile
-
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
-	nodes, err := ParsePDG(pathDot)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	graph := PrintNodes(nodes)
 	pathGraphs := path + "/data/"
+	programs := os.Args[1:]
 
 	for i := 0; i < 2; i++ {
+		//pathInput := "./data/test.py"
+		cmd := exec.Command(path+"/PyDG/parser.py", programs[i])
+		// open the out file for writing
+
+		pathDot := fmt.Sprintf("%s/data/test%v.dot", path, i+1)
+		outfile, err := os.Create(pathDot)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer outfile.Close()
+		cmd.Stdout = outfile
+
+		err = cmd.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = cmd.Wait()
+		if err != nil {
+			log.Fatal(err)
+		}
+		nodes, err := ParsePDG(pathDot)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		graph := PrintNodes(nodes)
+
 		// open output file
 		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
 		if err != nil {
 			log.Fatal(err)
 		}
-		// close fo on exit and check for its returned error
-		defer func() {
-			if err := fo.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
 		// make a write buffer
 		w := bufio.NewWriter(fo)
 		_, err = w.Write([]byte(graph))
@@ -122,15 +122,25 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		// close fo on exit and check for its returned error
+		if err := fo.Close(); err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	b, err := exec.Command(path+"/VF2/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", path+"/res.txt").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(string(b))
+
+	if len(b) > 0 && b[0] != 0 {
+		fmt.Print("Plagiarism: ", string(b))
+	} else {
+		fmt.Println("No plagiarism")
+	}
 }
 
-func ParsePDG(path string) ([]*Node, error) {
+func ParsePDG(path string) ([][]*Node, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -139,10 +149,18 @@ func ParsePDG(path string) ([]*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	sub := graph.SubGraph("sub_1", 0)
-	nodesMap := CreateGraph(sub)
-	nodes := ReduceNodes(nodesMap)
-	return nodes, nil
+	allNodes := make([][]*Node, graph.NumberSubGraph())
+	for i := 0; i < graph.NumberSubGraph(); i++ {
+		sub := graph.SubGraph(fmt.Sprintf("sub_%v", i), 0)
+		if sub == nil || sub.NumberNodes() == 0 {
+			continue
+		}
+		//fmt.Println(sub.)
+		nodesMap := CreateGraph(sub)
+		nodes := ReduceNodes(nodesMap)
+		allNodes = append(allNodes, nodes)
+	}
+	return allNodes, nil
 }
 
 func ReduceNodes(nodesMap map[string]*Node) []*Node {
@@ -181,10 +199,6 @@ func CreateGraph(graph *cgraph.Graph) map[string]*Node {
 }
 
 func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes map[string]*Node, baseNode *Node) {
-	if node.Label == "CDGRegionNodeType.else_block" {
-		fmt.Println("get")
-	}
-
 	actual := true
 	curEdgeGraph := graph.FirstOut(rootNodeGraph)
 	if curEdgeGraph == nil {
@@ -248,14 +262,20 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 	}
 }
 
-func PrintNodes(nodes []*Node) string {
-	output := "t # 0\n"
-	for i, node := range nodes {
-		output += fmt.Sprintf("v %v %v\n", i, node.Type)
-	}
-	for i, node := range nodes {
-		for _, edge := range node.Edges {
-			output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
+func PrintNodes(nodesAll [][]*Node) string {
+	output := ""
+	for N, nodes := range nodesAll {
+		if len(nodes) == 0 {
+			continue
+		}
+		output += fmt.Sprintf("t # %v\n", N)
+		for i, node := range nodes {
+			output += fmt.Sprintf("v %v %v\n", i, node.Type)
+		}
+		for i, node := range nodes {
+			for _, edge := range node.Edges {
+				output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
+			}
 		}
 	}
 	output += "t # -1 \n"
