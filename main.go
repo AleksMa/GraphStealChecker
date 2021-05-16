@@ -104,7 +104,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		graph := PrintNodes(nodes)
+		graph := PrintNodes(nodes[0])
 
 		// open output file
 		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
@@ -128,7 +128,7 @@ func main() {
 		}
 	}
 
-	b, err := exec.Command(path+"/VF2/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", path+"/res.txt").Output()
+	b, err := exec.Command(path+"/PyMCIS/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", "0.9").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func ParsePDG(path string) ([][]*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	allNodes := make([][]*Node, graph.NumberSubGraph())
+	allNodes := make([][]*Node, 0, graph.NumberSubGraph())
 	for i := 0; i < graph.NumberSubGraph(); i++ {
 		sub := graph.SubGraph(fmt.Sprintf("sub_%v", i), 0)
 		if sub == nil || sub.NumberNodes() == 0 {
@@ -158,7 +158,9 @@ func ParsePDG(path string) ([][]*Node, error) {
 		//fmt.Println(sub.)
 		nodesMap := CreateGraph(sub)
 		nodes := ReduceNodes(nodesMap)
-		allNodes = append(allNodes, nodes)
+		if len(nodes) != 0 {
+			allNodes = append(allNodes, nodes)
+		}
 	}
 	return allNodes, nil
 }
@@ -262,22 +264,15 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 	}
 }
 
-func PrintNodes(nodesAll [][]*Node) string {
+func PrintNodes(nodes []*Node) string {
 	output := ""
-	for N, nodes := range nodesAll {
-		if len(nodes) == 0 {
-			continue
-		}
-		output += fmt.Sprintf("t # %v\n", N)
-		for i, node := range nodes {
-			output += fmt.Sprintf("v %v %v\n", i, node.Type)
-		}
-		for i, node := range nodes {
-			for _, edge := range node.Edges {
-				output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
-			}
+	for i, node := range nodes {
+		output += fmt.Sprintf("v %v %v\n", i, node.Type)
+	}
+	for i, node := range nodes {
+		for _, edge := range node.Edges {
+			output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
 		}
 	}
-	output += "t # -1 \n"
 	return output
 }
