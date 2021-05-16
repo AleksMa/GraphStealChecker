@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/goccy/go-graphviz"
@@ -78,6 +80,8 @@ func main() {
 	pathGraphs := path + "/data/"
 	programs := os.Args[1:]
 
+	nodesAll := make([][][]*Node, 2, 2)
+
 	for i := 0; i < 2; i++ {
 		//pathInput := "./data/test.py"
 		cmd := exec.Command(path+"/PyDG/parser.py", programs[i])
@@ -99,45 +103,63 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		nodes, err := ParsePDG(pathDot)
+		nodesAll[i], err = ParsePDG(pathDot)
 		if err != nil {
-			log.Fatal(err)
-		}
-
-		graph := PrintNodes(nodes[0])
-
-		// open output file
-		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
-		if err != nil {
-			log.Fatal(err)
-		}
-		// make a write buffer
-		w := bufio.NewWriter(fo)
-		_, err = w.Write([]byte(graph))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = w.Flush()
-		if err != nil {
-			log.Fatal(err)
-		}
-		// close fo on exit and check for its returned error
-		if err := fo.Close(); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	b, err := exec.Command(path+"/PyMCIS/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", "0.9").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
+	commonPlag := 0.0
+	for _, subgraphFirst := range nodesAll[0] {
+		maxPlag := 0.0
+		for _, subgraphSecond := range nodesAll[1] {
+			for k, nodes := range [][]*Node{subgraphFirst, subgraphSecond} {
+				graph := PrintNodes(nodes)
 
-	if len(b) > 0 && b[0] != 0 {
-		fmt.Print("Plagiarism: ", string(b))
-	} else {
-		fmt.Println("No plagiarism")
+				// open output file
+				fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", k+1))
+				if err != nil {
+					log.Fatal(err)
+				}
+				// make a write buffer
+				w := bufio.NewWriter(fo)
+				_, err = w.Write([]byte(graph))
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = w.Flush()
+				if err != nil {
+					log.Fatal(err)
+				}
+				// close fo on exit and check for its returned error
+				if err := fo.Close(); err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			b, err := exec.Command(path+"/PyMCIS/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", "0.9").Output()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			res := bytes.Split(b, []byte("\n"))
+			if len(res) == 0 {
+				log.Fatal("Unexpected res: ", string(b))
+			}
+
+			plag, err := strconv.Atoi(string(res[0]))
+			if err != nil {
+				log.Fatal(err)
+			}
+			plagF := 2 * float64(plag) / float64(len(subgraphFirst) + len(subgraphSecond))
+			if plagF > maxPlag {
+				maxPlag = plagF
+			}
+		}
+		commonPlag += maxPlag
 	}
+	fmt.Println("Plagiarism: ", commonPlag / float64(len(nodesAll[0])))
 }
 
 func ParsePDG(path string) ([][]*Node, error) {
