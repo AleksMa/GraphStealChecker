@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +17,8 @@ import (
 	"github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
 )
+
+var Path string
 
 type EdgeType int
 type NodeType int
@@ -38,6 +41,7 @@ const (
 	Label
 	SwitchCase // case or default
 	Another
+	Count
 )
 
 func GetNodeType(inputLabel string) NodeType {
@@ -52,6 +56,49 @@ func GetNodeType(inputLabel string) NodeType {
 	default:
 		return Another
 	}
+}
+
+func GetOmega(nodes []*Node) []int {
+	omega := make([]int, Count)
+	for _, node := range nodes {
+		omega[node.Type]++
+	}
+	for i := range omega {
+		omega[i] /= len(nodes)
+	}
+	return omega
+}
+
+func GetTau(nodes []*Node, omega []int) float64 {
+	m := make([]int, Count)
+	for _, node := range nodes {
+		m[node.Type]++
+	}
+
+	tau := 0.0
+	for i := range omega {
+		if m[i] == 0 || omega[i] == 0 {
+			continue
+		}
+		tau += 2 * float64(m[i]) * math.Log(float64(m[i])/float64(len(nodes)*omega[i]))
+	}
+	return tau
+}
+
+func TestLikelihood(nodesFirst, nodesSecond []*Node) bool {
+	omega := GetOmega(nodesFirst)
+	tau := GetTau(nodesSecond, omega)
+
+	cmd := exec.Command(Path+"/chi_square.py", "0.005", strconv.Itoa(int(Count)))
+	out, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	prob, err := strconv.ParseFloat(strings.Split(string(out), "\n")[0], 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return tau < prob
 }
 
 type Edge struct {
@@ -76,18 +123,18 @@ func main() {
 		log.Fatal("usage: ./graph_checker program1 program2")
 	}
 
-	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	pathGraphs := path + "/data/"
+	Path, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	pathGraphs := Path + "/data/"
 	programs := os.Args[1:]
 
 	nodesAll := make([][][]*Node, 2, 2)
 
 	for i := 0; i < 2; i++ {
 		//pathInput := "./data/test.py"
-		cmd := exec.Command(path+"/PyDG/parser.py", programs[i])
+		cmd := exec.Command(Path+"/PyDG/parser.py", programs[i])
 		// open the out file for writing
 
-		pathDot := fmt.Sprintf("%s/data/test%v.dot", path, i+1)
+		pathDot := fmt.Sprintf("%s/data/test%v.dot", Path, i+1)
 		outfile, err := os.Create(pathDot)
 		if err != nil {
 			log.Fatal(err)
@@ -113,6 +160,8 @@ func main() {
 	for _, subgraphFirst := range nodesAll[0] {
 		maxPlag := 0.0
 		for _, subgraphSecond := range nodesAll[1] {
+			likelihood := TestLikelihood(subgraphFirst, subgraphSecond)
+			fmt.Println(likelihood)
 			for k, nodes := range [][]*Node{subgraphFirst, subgraphSecond} {
 				graph := PrintNodes(nodes)
 
@@ -138,7 +187,7 @@ func main() {
 				}
 			}
 
-			b, err := exec.Command(path+"/PyMCIS/run.py", path+"/data/graph1.txt", path+"/data/graph2.txt", "0.9").Output()
+			b, err := exec.Command(Path+"/PyMCIS/run.py", Path+"/data/graph1.txt", Path+"/data/graph2.txt", "0.9").Output()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -152,14 +201,14 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			plagF := 2 * float64(plag) / float64(len(subgraphFirst) + len(subgraphSecond))
+			plagF := 2 * float64(plag) / float64(len(subgraphFirst)+len(subgraphSecond))
 			if plagF > maxPlag {
 				maxPlag = plagF
 			}
 		}
 		commonPlag += maxPlag
 	}
-	fmt.Println("Plagiarism: ", commonPlag / float64(len(nodesAll[0])))
+	fmt.Println("Plagiarism: ", commonPlag/float64(len(nodesAll[0])))
 }
 
 func ParsePDG(path string) ([][]*Node, error) {
