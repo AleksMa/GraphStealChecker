@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,6 +20,8 @@ import (
 )
 
 var Path string
+var SubgraphSize float64
+var Likelihood float64
 
 type EdgeType int
 type NodeType int
@@ -32,6 +35,7 @@ const (
 	Root NodeType = iota
 	Call
 	Control // if, switch, for, while...
+	Branch  // then, else ...
 	Declaration
 	Assignment
 	Increment
@@ -46,50 +50,68 @@ const (
 
 func GetNodeType(inputLabel string) NodeType {
 	label := strings.ToLower(inputLabel)
-	controlRe := regexp.MustCompile(`^((if)|(for)|(while)).+$`)
-	assignRe := regexp.MustCompile(`^\w.+ = .*$`)
+	controlRe := regexp.MustCompile(`^.*((if)|(for)|(while)).*$`)
+	branchRe := regexp.MustCompile(`^.*((then)|(else)|(loop)).*$`)
+	incrementRe := regexp.MustCompile(`^(.*\+\+.*)|(.*--.*)|(.*\+=.*)|(.*-=.*)|(.*/=.*)|(.*\*=.*)$`)
+	expressionRe := regexp.MustCompile(`^.*[+\-*/%^~].*$`)
+	callRe := regexp.MustCompile(`^\w+\(.*\)$`)
+	returnRe := regexp.MustCompile(`^.*return.*$`)
+	assignRe := regexp.MustCompile(`^\w+\s*=\s*.*$`)
 	switch {
 	case controlRe.MatchString(label):
 		return Control
+	case branchRe.MatchString(label):
+		return Branch
+	case incrementRe.MatchString(label):
+		return Increment
+	case expressionRe.MatchString(label):
+		return Expression
+	case callRe.MatchString(label):
+		return Call
+	case returnRe.MatchString(label):
+		return Return
 	case assignRe.MatchString(label):
-		return Control
+		return Assignment
 	default:
 		return Another
 	}
 }
 
-func GetOmega(nodes []*Node) []int {
-	omega := make([]int, Count)
+func GetOmega(nodes []*Node) []float64 {
+	omega := make([]float64, Count)
 	for _, node := range nodes {
 		omega[node.Type]++
 	}
 	for i := range omega {
-		omega[i] /= len(nodes)
+		omega[i] /= float64(len(nodes))
 	}
 	return omega
 }
 
-func GetTau(nodes []*Node, omega []int) float64 {
+func GetTau(nodes []*Node, omega []float64) float64 {
 	m := make([]int, Count)
 	for _, node := range nodes {
 		m[node.Type]++
 	}
+
+	fmt.Println(m)
+	fmt.Println(omega)
 
 	tau := 0.0
 	for i := range omega {
 		if m[i] == 0 || omega[i] == 0 {
 			continue
 		}
-		tau += 2 * float64(m[i]) * math.Log(float64(m[i])/float64(len(nodes)*omega[i]))
+		tau += 2 * float64(m[i]) * math.Log(float64(m[i])/(float64(len(nodes))*omega[i]))
 	}
 	return tau
 }
 
-func TestLikelihood(nodesFirst, nodesSecond []*Node) bool {
+func TestLikelihood(nodesFirst, nodesSecond []*Node) (bool, float64) {
 	omega := GetOmega(nodesFirst)
 	tau := GetTau(nodesSecond, omega)
 
-	cmd := exec.Command(Path+"/chi_square.py", "0.005", strconv.Itoa(int(Count)))
+	cmd := exec.Command(Path+"/chi_square.py", fmt.Sprint(Likelihood), strconv.Itoa(int(Count)))
 	out, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err)
@@ -98,7 +120,8 @@ func TestLikelihood(nodesFirst, nodesSecond []*Node) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return tau < prob
+	fmt.Println("tau & prob:", tau, prob)
+	return math.Abs(tau) < prob, tau
 }
 
 type Edge struct {
@@ -123,9 +146,18 @@ func main() {
 		log.Fatal("usage: ./graph_checker program1 program2")
 	}
 
+	subgraphSize := flag.Float64("s", 0.9, "minimum common subgraph size")
+	likelihoodLevel := flag.Float64("l", 0.995, "minimum common subgraph size")
+	program1 := flag.String("p1", "", "first program")
+	program2 := flag.String("p2", "", "second program")
+	flag.Parse()
+
+	SubgraphSize = *subgraphSize
+	Likelihood = 1 - *likelihoodLevel
+
 	Path, _ = filepath.Abs(filepath.Dir(os.Args[0]))
 	pathGraphs := Path + "/data/"
-	programs := os.Args[1:]
+	programs := []string{*program1, *program2}
 
 	nodesAll := make([][][]*Node, 2, 2)
 
@@ -157,11 +189,24 @@ func main() {
 	}
 
 	commonPlag := 0.0
-	for _, subgraphFirst := range nodesAll[0] {
+	firstSize, secondSize := 0, 0
+	for i, subgraphFirst := range nodesAll[0] {
+		firstSize += len(subgraphFirst)
 		maxPlag := 0.0
-		for _, subgraphSecond := range nodesAll[1] {
-			likelihood := TestLikelihood(subgraphFirst, subgraphSecond)
-			fmt.Println(likelihood)
+		maxJ := 0
+		for j, subgraphSecond := range nodesAll[1] {
+			if i == 0 {
+				secondSize += len(subgraphSecond)
+			}
+			likelihood, tau := TestLikelihood(subgraphFirst, subgraphSecond)
+			if !likelihood || float64(len(subgraphFirst)) / float64(len(subgraphSecond)) < 0.9 || float64(len(subgraphFirst)) / float64(len(subgraphSecond)) > 1.1 {
+				continue
+			}
+			if tau == 0 {
+				maxPlag = 2 * float64(len(subgraphSecond)) / float64(len(subgraphFirst)+len(subgraphSecond))
+				maxJ = j
+				continue
+			}
 			for k, nodes := range [][]*Node{subgraphFirst, subgraphSecond} {
 				graph := PrintNodes(nodes)
 
@@ -187,7 +232,8 @@ func main() {
 				}
 			}
 
-			b, err := exec.Command(Path+"/PyMCIS/run.py", Path+"/data/graph1.txt", Path+"/data/graph2.txt", "0.9").Output()
+			fmt.Println(SubgraphSize)
+			b, err := exec.Command(Path+"/PyMCIS/run.py", Path+"/data/graph1.txt", Path+"/data/graph2.txt", fmt.Sprint(SubgraphSize)).Output()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -204,9 +250,10 @@ func main() {
 			plagF := 2 * float64(plag) / float64(len(subgraphFirst)+len(subgraphSecond))
 			if plagF > maxPlag {
 				maxPlag = plagF
+				maxJ = j
 			}
 		}
-		commonPlag += maxPlag
+		commonPlag += maxPlag * (float64(len(nodesAll[1][maxJ]) + len(nodesAll[0][i])))
 	}
 	fmt.Println("Plagiarism: ", commonPlag/float64(len(nodesAll[0])))
 }
@@ -291,7 +338,7 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 		if actual {
 			label := curNodeGraph.Get("label")
 			curNode = &Node{
-				Type:   GetNodeType(label), //FIXME
+				Type:   GetNodeType(label),
 				Number: len(nodes),
 				Label:  label,
 				Name:   curNodeName,
