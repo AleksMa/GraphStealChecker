@@ -198,15 +198,15 @@ func main() {
 			if i == 0 {
 				secondSize += len(subgraphSecond)
 			}
-			likelihood, tau := TestLikelihood(subgraphFirst, subgraphSecond)
+			likelihood, _ := TestLikelihood(subgraphFirst, subgraphSecond)
 			if !likelihood || float64(len(subgraphFirst)) / float64(len(subgraphSecond)) < 0.9 || float64(len(subgraphFirst)) / float64(len(subgraphSecond)) > 1.1 {
 				continue
 			}
-			if tau == 0 {
-				maxPlag = 2 * float64(len(subgraphSecond)) / float64(len(subgraphFirst)+len(subgraphSecond))
-				maxJ = j
-				continue
-			}
+			//if tau == 0 {
+			//	maxPlag = 2 * float64(len(subgraphSecond)) / float64(len(subgraphFirst)+len(subgraphSecond))
+			//	maxJ = j
+			//	continue
+			//}
 			for k, nodes := range [][]*Node{subgraphFirst, subgraphSecond} {
 				graph := PrintNodes(nodes)
 
@@ -233,7 +233,7 @@ func main() {
 			}
 
 			fmt.Println(SubgraphSize)
-			b, err := exec.Command(Path+"/PyMCIS/run.py", Path+"/data/graph1.txt", Path+"/data/graph2.txt", fmt.Sprint(SubgraphSize)).Output()
+			b, err := exec.Command(Path+"/PyMCIS/run.py", Path+"/data/graph1.txt", Path+"/data/graph2.txt", fmt.Sprint(SubgraphSize), "10.").Output()
 			if err != nil {
 				log.Fatal(err)
 			}
