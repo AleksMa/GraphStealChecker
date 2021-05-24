@@ -2,24 +2,19 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
-	"go.uber.org/atomic"
 )
 
 var (
@@ -27,6 +22,7 @@ var (
 	SubgraphSize float64
 	Likelihood   float64
 	TimeLimit    int
+	Programs     []string
 )
 
 type EdgeType int
@@ -54,6 +50,7 @@ const (
 	Count
 )
 
+// Определение класса Node по Label
 func GetNodeType(inputLabel string) NodeType {
 	label := strings.ToLower(inputLabel)
 	controlRe := regexp.MustCompile(`^.*((if)|(for)|(while)).*$`)
@@ -83,53 +80,6 @@ func GetNodeType(inputLabel string) NodeType {
 	}
 }
 
-func GetOmega(nodes []*Node) []float64 {
-	omega := make([]float64, Count)
-	for _, node := range nodes {
-		omega[node.Type]++
-	}
-	for i := range omega {
-		omega[i] /= float64(len(nodes))
-	}
-	return omega
-}
-
-func GetTau(nodes []*Node, omega []float64) float64 {
-	m := make([]int, Count)
-	for _, node := range nodes {
-		m[node.Type]++
-	}
-
-	//fmt.Println(m)
-	//fmt.Println(omega)
-
-	tau := 0.0
-	for i := range omega {
-		if m[i] == 0 || omega[i] == 0 {
-			continue
-		}
-		tau += 2 * float64(m[i]) * math.Log(float64(m[i])/(float64(len(nodes))*omega[i]))
-	}
-	return tau
-}
-
-func TestLikelihood(nodesFirst, nodesSecond []*Node) (bool, float64) {
-	omega := GetOmega(nodesFirst)
-	tau := GetTau(nodesSecond, omega)
-
-	cmd := exec.Command(Path+"/chi_square.py", fmt.Sprint(Likelihood), strconv.Itoa(int(Count)))
-	out, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	prob, err := strconv.ParseFloat(strings.Split(string(out), "\n")[0], 64)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//fmt.Println("tau & prob:", tau, prob)
-	return math.Abs(tau) < prob, tau
-}
-
 type Edge struct {
 	Destination *Node
 	Type        EdgeType
@@ -143,16 +93,7 @@ type Node struct {
 	Name   string
 }
 
-var (
-	nodesSlice []*Node
-)
-
-func main() {
-	now := time.Now()
-	if len(os.Args) < 3 {
-		log.Fatal("usage: ./graph_checker program1 program2")
-	}
-
+func ParseArgs() {
 	subgraphSize := flag.Float64("s", 0.9, "minimum common subgraph size")
 	timeLimit := flag.Int("t", 10, "time limit on subgraph isomorphism")
 	likelihoodLevel := flag.Float64("l", 0.995, "level of likelihood")
@@ -162,20 +103,30 @@ func main() {
 
 	TimeLimit = *timeLimit
 	SubgraphSize = *subgraphSize
-	Likelihood = 1 - *likelihoodLevel
+	Likelihood = *likelihoodLevel
+	Programs = []string{*program1, *program2}
+}
 
-	Path, _ = filepath.Abs(filepath.Dir(os.Args[0]))
-	pathGraphs := Path + "/data/"
-	programs := []string{*program1, *program2}
+func main() {
+	now := time.Now()
+	if len(os.Args) < 3 {
+		log.Fatal("usage: ./graph_checker -p1=program1 -p2=program2")
+	}
+	ParseArgs()
 
-	nodesAll := make([][][]*Node, 2, 2)
+	var err error
+	Path, err = os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	pathGraphs := Path + "/temp/"
 
-	for i := 0; i < 2; i++ {
-		//pathInput := "./data/test.py"
-		cmd := exec.Command(Path+"/PyDG/parser.py", programs[i])
-		// open the out file for writing
+	nodesAll := make([][][]*Node, 2)
 
-		pathDot := fmt.Sprintf("%s/data/test%v.dot", Path, i+1)
+	for i := range nodesAll {
+		cmd := exec.Command(Path+"/PyDG/parser.py", Programs[i])
+
+		pathDot := fmt.Sprintf("%s/temp/test%v.dot", Path, i+1)
 		outfile, err := os.Create(pathDot)
 		if err != nil {
 			log.Fatal(err)
@@ -197,88 +148,64 @@ func main() {
 		}
 	}
 
-	commonPlag := atomic.NewFloat64(0.0)
-	firstSize, secondSize := 0, 0
-	wg := sync.WaitGroup{}
-	for i := range nodesAll[0] {
-		firstSize += len(nodesAll[0][i])
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			subgraphFirst := nodesAll[0][i]
-			maxPlag := 0.0
-			maxJ := 0
-			for j, subgraphSecond := range nodesAll[1] {
-				if i == 0 {
-					secondSize += len(subgraphSecond)
-				}
-				likelihood, tau := TestLikelihood(subgraphFirst, subgraphSecond)
-				if !likelihood || float64(len(subgraphFirst))/float64(len(subgraphSecond)) < 0.9 || float64(len(subgraphFirst))/float64(len(subgraphSecond)) > 1.1 {
-					continue
-				}
-				if tau == 0 {
-					//maxPlag = 2 * float64(len(subgraphSecond)) / float64(len(subgraphFirst)+len(subgraphSecond))
-					//maxJ = j
-					//continue
-				}
-				for k, nodes := range [][]*Node{subgraphFirst, subgraphSecond} {
-					graph := PrintNodes(nodes)
+	for i, nodes := range nodesAll {
+		graph := StringifyNodes(nodes)
 
-					// open output file
-					fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v_%v.txt", i, k+1))
-					if err != nil {
-						log.Fatal(err)
-					}
-					// make a write buffer
-					w := bufio.NewWriter(fo)
-					_, err = w.Write([]byte(graph))
-					if err != nil {
-						log.Fatal(err)
-					}
+		// open output file
+		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
+		if err != nil {
+			log.Fatal(err)
+		}
+		// make a write buffer
+		w := bufio.NewWriter(fo)
+		_, err = w.Write([]byte(graph))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-					err = w.Flush()
-					if err != nil {
-						log.Fatal(err)
-					}
-					// close fo on exit and check for its returned error
-					if err := fo.Close(); err != nil {
-						log.Fatal(err)
-					}
-				}
-
-				//fmt.Println(Path+"/PyMCIS/run.py", Path+fmt.Sprintf("/data/graph%v_1.txt", i), Path+fmt.Sprintf("/data/graph%v_2.txt", i), fmt.Sprint(SubgraphSize), fmt.Sprint(timeLimit))
-				b, err := exec.Command(
-					Path+"/PyMCIS/run.py",
-					Path+fmt.Sprintf("/data/graph%v_1.txt", i),
-					Path+fmt.Sprintf("/data/graph%v_2.txt", i),
-					fmt.Sprint(SubgraphSize),
-					fmt.Sprint(TimeLimit)).
-					Output()
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				res := bytes.Split(b, []byte("\n"))
-				if len(res) == 0 {
-					log.Fatal("Unexpected res: ", string(b))
-				}
-
-				plag, err := strconv.Atoi(string(res[0]))
-				if err != nil {
-					log.Fatal(err)
-				}
-				plagF := 2 * float64(plag) / float64(len(subgraphFirst)+len(subgraphSecond))
-				if plagF > maxPlag {
-					maxPlag = plagF
-					maxJ = j
-				}
-			}
-			commonPlag.Add(maxPlag * (float64(len(nodesAll[1][maxJ]) + len(nodesAll[0][i]))))
-			fmt.Printf("%s vs %s: %v\n", prettifyFuncName(subgraphFirst[0].Label), prettifyFuncName(nodesAll[1][maxJ][0].Label), maxPlag)
-		}(i)
+		err = w.Flush()
+		if err != nil {
+			log.Fatal(err)
+		}
+		// close fo on exit and check for its returned error
+		if err := fo.Close(); err != nil {
+			log.Fatal(err)
+		}
 	}
-	wg.Wait()
-	fmt.Println("Plagiarism: ", commonPlag.Load()/float64(firstSize+secondSize))
+
+	b, err := exec.Command(
+		Path+"/PyMCIS/run.py",
+		Path+"/temp/graph1.txt",
+		Path+"/temp/graph2.txt",
+		fmt.Sprint(SubgraphSize),
+		fmt.Sprint(TimeLimit),
+		fmt.Sprint(Likelihood)).
+		Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, line := range strings.Split(string(b), "\n") {
+		elems := strings.Split(line, " ")
+		if len(elems) == 3 {
+			i1, _ := strconv.Atoi(elems[0])
+			i2, _ := strconv.Atoi(elems[1])
+			likely, _ := strconv.ParseFloat(elems[2], 64)
+			if likely != 0.0 {
+				fmt.Printf(
+					"%s vs %s: %v\n",
+					PrettifyFuncName(nodesAll[0][i1][0].Label),
+					PrettifyFuncName(nodesAll[1][i2][0].Label),
+					likely,
+				)
+			}
+		} else if len(elems) == 1 {
+			plag, _ := strconv.ParseFloat(elems[0], 64)
+			fmt.Println("Plagiarism:", plag)
+			break
+		}
+	}
+
 	fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
 }
 
@@ -297,7 +224,6 @@ func ParsePDG(path string) ([][]*Node, error) {
 		if sub == nil || sub.NumberNodes() == 0 {
 			continue
 		}
-		//fmt.Println(sub.)
 		nodesMap := CreateGraph(sub)
 		nodes := ReduceNodes(nodesMap)
 		if len(nodes) != 0 {
@@ -406,19 +332,22 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 	}
 }
 
-func PrintNodes(nodes []*Node) string {
-	output := ""
-	for i, node := range nodes {
-		output += fmt.Sprintf("v %v %v\n", i, node.Type)
-	}
-	for i, node := range nodes {
-		for _, edge := range node.Edges {
-			output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
+func StringifyNodes(nodesAll [][]*Node) string {
+	output := "t\n"
+	for _, nodes := range nodesAll {
+		for i, node := range nodes {
+			output += fmt.Sprintf("v %v %v\n", i, node.Type)
 		}
+		for i, node := range nodes {
+			for _, edge := range node.Edges {
+				output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
+			}
+		}
+		output += "t\n"
 	}
 	return output
 }
 
-func prettifyFuncName(label string) string {
+func PrettifyFuncName(label string) string {
 	return strings.Split(label[10:], "(")[0]
 }
