@@ -352,5 +352,5 @@ func StringifyNodes(nodesAll [][]*Node) string {
 }
 
 func PrettifyFuncName(label string) string {
-	return label[10:]
+	return fmt.Sprintf("%60s", label[10:])
 }
