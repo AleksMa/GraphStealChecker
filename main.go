@@ -23,10 +23,17 @@ var (
 	Likelihood   float64
 	TimeLimit    int
 	Programs     []string
+
+	NodeFunctionsComp []*NodeComp
 )
 
 type EdgeType int
 type NodeType int
+
+type NodeComp struct {
+	Function int
+	Comp     map[int]int
+}
 
 const (
 	ControlEdge EdgeType = iota
@@ -184,14 +191,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	for _, line := range strings.Split(string(b), "\n") {
 		elems := strings.Split(line, " ")
-		if len(elems) == 3 {
+		if len(elems) == 4 {
 			i1, _ := strconv.Atoi(elems[0])
 			i2, _ := strconv.Atoi(elems[1])
 			likely, _ := strconv.ParseFloat(elems[2], 64)
-			if likely != 0.0 {
+			ParseNodesComp(i1, i2, elems[3])
+			if likely >= 0.0 {
 				fmt.Printf(
 					"%s vs %s: %v\n",
 					PrettifyFuncName(nodesAll[0][i1][0].Label),
@@ -206,7 +213,31 @@ func main() {
 		}
 	}
 
+	for i, comp := range NodeFunctionsComp {
+		fmt.Println(i, comp.Function, comp.Comp)
+	}
+
 	fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
+}
+
+func ParseNodesComp(i1, i2 int, comp string) {
+	pairs := strings.Split(comp[1:len(comp)-1], ",")
+
+	fmt.Println(pairs)
+	compMap := make(map[int]int, len(pairs))
+	for _, pair := range pairs {
+		if len(pair) == 0 {
+			continue
+		}
+		kv := strings.Split(pair, ":")
+		k, _ := strconv.Atoi(kv[0])
+		v, _ := strconv.Atoi(kv[1])
+		compMap[k] = v
+	}
+	NodeFunctionsComp = append(NodeFunctionsComp, &NodeComp{
+		Function: i2,
+		Comp:     compMap,
+	})
 }
 
 func ParsePDG(path string) ([][]*Node, error) {
@@ -239,7 +270,6 @@ func ReduceNodes(nodesMap map[string]*Node) []*Node {
 	for _, node := range nodesMap {
 		nodesIndex[node.Number] = node
 	}
-	// TODO: reducing
 	for i := 0; i < len(nodesIndex); i++ {
 		node, ok := nodesIndex[i]
 		if !ok {
@@ -312,10 +342,6 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 		if curEdgeGraph == nil {
 			return
 		}
-		//fmt.Println(curEdgeGraph.Node().Name(), "\n\n")
-		//if curEdgeGraph.Node().Name() == "a89110b0-951f-4d08-897a-89227c5761d7" {
-		//	fmt.Println("get")
-		//}
 		curNodeGraph = curEdgeGraph.Node()
 		if curNodeGraph == nil {
 			return
@@ -352,5 +378,5 @@ func StringifyNodes(nodesAll [][]*Node) string {
 }
 
 func PrettifyFuncName(label string) string {
-	return fmt.Sprintf("%60s", label[10:])
+	return fmt.Sprintf("%60s     ", label[10:])
 }
