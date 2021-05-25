@@ -8,5 +8,5 @@
 ## Использование
 
 ```bash
-go build main.go && ./main -p1=./data/test.py -p2=./data/test.py -s=0.9 -t=100
+ go build -o ./bin/main main.go && ./bin/main -p1=./data/prog1.py -p2=./prog2.py -s=0.7 -t=5 -l=0.99
 ```

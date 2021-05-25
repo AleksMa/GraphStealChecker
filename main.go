@@ -340,6 +340,9 @@ func StringifyNodes(nodesAll [][]*Node) string {
 		}
 		for i, node := range nodes {
 			for _, edge := range node.Edges {
+				if i == edge.Destination.Number {
+					continue
+				}
 				output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
 			}
 		}
@@ -349,5 +352,5 @@ func StringifyNodes(nodesAll [][]*Node) string {
 }
 
 func PrettifyFuncName(label string) string {
-	return strings.Split(label[10:], "(")[0]
+	return label[10:]
 }
