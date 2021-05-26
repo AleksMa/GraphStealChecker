@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
@@ -25,14 +27,32 @@ var (
 	Programs     []string
 
 	NodeFunctionsComp []*NodeComp
+	LineFunctionsComp []*FuncsComp
+
+	Files [][]CodeLine = make([][]CodeLine, 2)
 )
 
 type EdgeType int
 type NodeType int
 
+type OppositeCodes struct {
+	FileLeft []CodeLine
+	FileRight []CodeLine
+}
+
+type CodeLine struct {
+	Line  string
+	Color string
+}
+
 type NodeComp struct {
 	Function int
 	Comp     map[int]int
+}
+
+type FuncsComp struct {
+	FirstLines  map[int]struct{}
+	SecondLines map[int]struct{}
 }
 
 const (
@@ -98,6 +118,8 @@ type Node struct {
 	Edges  []*Edge
 	Label  string
 	Name   string
+	Start  int
+	End    int
 }
 
 func ParseArgs() {
@@ -129,6 +151,30 @@ func main() {
 	pathGraphs := Path + "/temp/"
 
 	nodesAll := make([][][]*Node, 2)
+
+	for i, program := range Programs {
+		file, err := os.Open(program)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer func() {
+			if err = file.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		b, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		lines := strings.Split(string(b), "\n")
+		for _, line := range lines {
+			Files[i] = append(Files[i], CodeLine{
+				Line:  line,
+				Color: "#000000",
+			})
+		}
+	}
 
 	for i := range nodesAll {
 		cmd := exec.Command(Path+"/PyDG/parser.py", Programs[i])
@@ -213,11 +259,58 @@ func main() {
 		}
 	}
 
+	thisComp := NodeFunctionsComp
+	fmt.Println(thisComp)
 	for i, comp := range NodeFunctionsComp {
-		fmt.Println(i, comp.Function, comp.Comp)
+		linesComp1 := make(map[int]struct{}, len(comp.Comp))
+		linesComp2 := make(map[int]struct{}, len(comp.Comp))
+		for k, v := range comp.Comp {
+
+			start, end := nodesAll[0][i][k].Start, nodesAll[0][i][k].End
+			if start != -1 && end != -1 {
+				for j := start; j <= end; j++ {
+					linesComp1[j] = struct{}{}
+					Files[0][j-1].Color = "#FF0000"
+				}
+			}
+			start, end = nodesAll[1][comp.Function][v].Start, nodesAll[1][comp.Function][v].End
+			if start != -1 && end != -1 {
+				for j := start; j <= end; j++ {
+					linesComp2[j] = struct{}{}
+					Files[1][j-1].Color = "#FF0000"
+				}
+			}
+		}
+		LineFunctionsComp = append(LineFunctionsComp, &FuncsComp{
+			FirstLines:  linesComp1,
+			SecondLines: linesComp2,
+		})
 	}
 
+	//files := Files
+	//fmt.Println(files)
 	fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+		tmpl, err := template.New("tmpl").Parse(temple)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = tmpl.Execute(w, OppositeCodes{
+			FileLeft:  Files[0],
+			FileRight: Files[1],
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	fmt.Println("Server is listening...")
+	err = http.ListenAndServe(":8181", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func ParseNodesComp(i1, i2 int, comp string) {
@@ -286,10 +379,30 @@ func ReduceNodes(nodesMap map[string]*Node) []*Node {
 
 func CreateGraph(graph *cgraph.Graph) map[string]*Node {
 	graphNode := graph.FirstNode() // Первая Node всегда "Root"
+	parts := strings.Split(graphNode.Get("label"), "$")
+	label := parts[0]
+	start, end := -1, -1
+	var err error
+	if len(parts) > 1 {
+		lineNoParts := strings.Split(parts[1], ":")
+		start, err = strconv.Atoi(lineNoParts[0])
+		if err != nil {
+			start, end = -1, -1
+		} else {
+			if len(lineNoParts) > 1 {
+				end, err = strconv.Atoi(lineNoParts[1])
+			}
+			if err != nil || len(lineNoParts) <= 1 {
+				end = start
+			}
+		}
+	}
 	node := &Node{
 		Type:   Root,
 		Number: 0,
-		Label:  graphNode.Get("label"),
+		Label:  label,
+		Start:  start,
+		End:    end,
 		Name:   graphNode.Name(),
 	}
 	nodes := make(map[string]*Node, graph.NumberNodes())
@@ -316,11 +429,30 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 	for {
 		var curNode *Node
 		if actual {
-			label := curNodeGraph.Get("label")
+			parts := strings.Split(curNodeGraph.Get("label"), "$")
+			label := parts[0]
+			start, end := -1, -1
+			var err error
+			if len(parts) > 1 {
+				lineNoParts := strings.Split(parts[1], ":")
+				start, err = strconv.Atoi(lineNoParts[0])
+				if err != nil {
+					start, end = -1, -1
+				} else {
+					if len(lineNoParts) > 1 {
+						end, err = strconv.Atoi(lineNoParts[1])
+					}
+					if err != nil || len(lineNoParts) <= 1 {
+						end = start
+					}
+				}
+			}
 			curNode = &Node{
 				Type:   GetNodeType(label),
 				Number: len(nodes),
 				Label:  label,
+				Start:  start,
+				End:    end,
 				Name:   curNodeName,
 			}
 			nodes[curNodeGraph.Name()] = curNode
@@ -380,3 +512,85 @@ func StringifyNodes(nodesAll [][]*Node) string {
 func PrettifyFuncName(label string) string {
 	return fmt.Sprintf("%60s     ", label[10:])
 }
+
+var temple = `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>/api/tarantool/</title>
+</head>
+<style type="text/css">
+	* {
+		font-family: "Helvetica", sans-serif;
+		margin: 0;
+		padding: 0;
+	}
+
+	.container {
+		display: flex;
+	}
+
+	.left, .right {
+		min-width: 30%;
+		word-break: break-all;
+		flex-grow: 1;
+	}
+
+	.base_block {
+		margin-top: 10px;
+	}
+
+	.error {
+		color: #dc143c;
+		margin-top: 10px;
+	}
+
+	.response {
+		font-family: "Fira Mono", monospace;
+		font-size: 12px;
+		border: 1px solid;
+		border-radius: 5px;
+		padding: 10px;
+		display: inline-block;
+	}
+
+	.mb {
+		margin-bottom: 5px;
+	}
+
+	body {
+		margin: 10px;
+	}
+
+	h3 {
+		margin-bottom: 5px;
+	}
+
+	h5 {
+		margin-bottom: 5px;
+	}
+</style>
+<body>
+<h3>Plagiarism</h3>
+		<div class="container">
+			<div class="left">
+				<div class="response">
+				{{range .FileLeft}}
+					<p style="color:{{.Color}};">
+						{{.Line}}
+					</p>
+				{{end}}
+				</div>
+			</div>
+			<div class="right">
+				<div class="response">
+				{{range .FileRight}}
+					<p style="color:{{.Color}};">
+						{{.Line}}
+					</p>
+				{{end}}
+				</div>
+			</div>
+		</div>
+</body>
+`
