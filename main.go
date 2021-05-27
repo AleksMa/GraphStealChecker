@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -146,16 +147,16 @@ func main() {
 	//fmt.Println(files)
 
 	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
-		Programs = []string{
-			strings.TrimSpace(r.URL.Query().Get("p1")),
-			strings.TrimSpace(r.URL.Query().Get("p2")),
-		}
+		//Programs = []string{
+		//	strings.TrimSpace(r.URL.Query().Get("p1")),
+		//	strings.TrimSpace(r.URL.Query().Get("p2")),
+		//}
 
 		now := time.Now()
-		Check()
+		Check(r)
 		fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
 
-		tmpl, err := template.New("tmpl").Parse(temple)
+		tmpl, err := template.New("tmpl").Parse(CheckTemplate)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -169,7 +170,7 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.New("start").Parse(startTemple)
+		tmpl, err := template.New("start").Parse(StartTemplate)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -186,7 +187,7 @@ func main() {
 	}
 }
 
-func Check() {
+func Check(r *http.Request) {
 	var err error
 	Path, err = os.Getwd()
 	if err != nil {
@@ -194,7 +195,16 @@ func Check() {
 	}
 	pathGraphs := Path + "/temp/"
 
+	Programs = make([]string, 2)
 	nodesAll := make([][][]*Node, 2)
+
+	for i, key := range []string{"p1", "p2"} {
+		program, err := FileUpload(r, key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		Programs[i] = Path + "/temp/" + program
+	}
 
 	for i, program := range Programs {
 		file, err := os.Open(program)
@@ -226,22 +236,22 @@ func Check() {
 		pathDot := fmt.Sprintf("%s/temp/test%v.dot", Path, i+1)
 		outfile, err := os.Create(pathDot)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("parser: ", err)
 		}
 		defer outfile.Close()
 		cmd.Stdout = outfile
 
 		err = cmd.Start()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("parser: ", err)
 		}
 		err = cmd.Wait()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("parser: ", err)
 		}
 		nodesAll[i], err = ParsePDG(pathDot)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("parser: ", err)
 		}
 	}
 
@@ -251,22 +261,22 @@ func Check() {
 		// open output file
 		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("txt output: ", err)
 		}
 		// make a write buffer
 		w := bufio.NewWriter(fo)
 		_, err = w.Write([]byte(graph))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("txt output: ", err)
 		}
 
 		err = w.Flush()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("txt output: ", err)
 		}
 		// close fo on exit and check for its returned error
 		if err := fo.Close(); err != nil {
-			log.Fatal(err)
+			log.Fatal("txt output: ", err)
 		}
 	}
 
@@ -279,7 +289,7 @@ func Check() {
 		fmt.Sprint(Likelihood)).
 		Output()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("mcis: ", err)
 	}
 	for _, line := range strings.Split(string(b), "\n") {
 		elems := strings.Split(line, " ")
@@ -532,7 +542,33 @@ func PrettifyFuncName(label string) string {
 	return fmt.Sprintf("%60s     ", label[10:])
 }
 
-var startTemple = `
+// This function returns the filename(to save in database) of the saved file
+// or an error if it occurs
+func FileUpload(r *http.Request, key string) (string, error) {
+	// ParseMultipartForm parses a request body as multipart/form-data
+	r.ParseMultipartForm(32 << 20)
+
+	file, handler, err := r.FormFile(key) // Retrieve the file from form data
+
+	if err != nil {
+		return "", err
+	}
+	defer file.Close() // Close the file when we finish
+
+	// This is path which we want to store the file
+	f, err := os.OpenFile(Path+"/temp/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Copy the file to the destination path
+	io.Copy(f, file)
+
+	return handler.Filename, nil
+}
+
+var StartTemplate = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -592,10 +628,10 @@ var startTemple = `
 </style>
 <body>
 <h3>Input</h3>
-<form action="/check" method="GET">
+<form action="/check" method="POST" enctype="multipart/form-data">
 	<div class="mb">
-		<input type="text" name="p1" style="width: 20em">
-		<input type="text" name="p2" style="width: 20em">
+		<input type="file" id="p1" name="p1">
+		<input type="file" id="p2" name="p2">
 	</div>
 	<div>
 		<input type="submit" value="Проверить!"/>
@@ -604,7 +640,7 @@ var startTemple = `
 </body>
 </html>`
 
-var temple = `<!DOCTYPE html>
+var CheckTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
