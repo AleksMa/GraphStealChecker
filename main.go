@@ -36,7 +36,7 @@ type EdgeType int
 type NodeType int
 
 type OppositeCodes struct {
-	FileLeft []CodeLine
+	FileLeft  []CodeLine
 	FileRight []CodeLine
 }
 
@@ -137,12 +137,56 @@ func ParseArgs() {
 }
 
 func main() {
-	now := time.Now()
-	if len(os.Args) < 3 {
-		log.Fatal("usage: ./graph_checker -p1=program1 -p2=program2")
-	}
+	//if len(os.Args) < 3 {
+	//	log.Fatal("usage: ./graph_checker -p1=program1 -p2=program2")
+	//}
 	ParseArgs()
 
+	//files := Files
+	//fmt.Println(files)
+
+	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
+		Programs = []string{
+			strings.TrimSpace(r.URL.Query().Get("p1")),
+			strings.TrimSpace(r.URL.Query().Get("p2")),
+		}
+
+		now := time.Now()
+		Check()
+		fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
+
+		tmpl, err := template.New("tmpl").Parse(temple)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = tmpl.Execute(w, OppositeCodes{
+			FileLeft:  Files[0],
+			FileRight: Files[1],
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.New("start").Parse(startTemple)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = tmpl.Execute(w, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	fmt.Println("http://127.0.0.1:8181")
+	err := http.ListenAndServe(":8181", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func Check() {
 	var err error
 	Path, err = os.Getwd()
 	if err != nil {
@@ -285,31 +329,6 @@ func main() {
 			FirstLines:  linesComp1,
 			SecondLines: linesComp2,
 		})
-	}
-
-	//files := Files
-	//fmt.Println(files)
-	fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		tmpl, err := template.New("tmpl").Parse(temple)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = tmpl.Execute(w, OppositeCodes{
-			FileLeft:  Files[0],
-			FileRight: Files[1],
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-
-	fmt.Println("Server is listening...")
-	err = http.ListenAndServe(":8181", nil)
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -512,6 +531,78 @@ func StringifyNodes(nodesAll [][]*Node) string {
 func PrettifyFuncName(label string) string {
 	return fmt.Sprintf("%60s     ", label[10:])
 }
+
+var startTemple = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>/api/tarantool/</title>
+</head>
+<style type="text/css">
+	* {
+		font-family: "Helvetica", sans-serif;
+		margin: 0;
+		padding: 0;
+	}
+
+	.container {
+		display: flex;
+	}
+
+	.left, .right {
+		min-width: 30%;
+		word-break: break-all;
+		flex-grow: 1;
+	}
+
+	.base_block {
+		margin-top: 10px;
+	}
+
+	.error {
+		color: #dc143c;
+		margin-top: 10px;
+	}
+
+	.response {
+		font-family: "Fira Mono", monospace;
+		font-size: 12px;
+		border: 1px solid;
+		border-radius: 5px;
+		padding: 10px;
+		display: inline-block;
+	}
+
+	.mb {
+		margin-bottom: 5px;
+	}
+
+	body {
+		margin: 10px;
+	}
+
+	h3 {
+		margin-bottom: 5px;
+	}
+
+	h5 {
+		margin-bottom: 5px;
+	}
+</style>
+<body>
+<h3>Input</h3>
+<form action="/check" method="GET">
+	<div class="mb">
+		<input type="text" name="p1" style="width: 20em">
+		<input type="text" name="p2" style="width: 20em">
+	</div>
+	<div>
+		<input type="submit" value="Проверить!"/>
+	</div>
+</form>
+</body>
+</html>`
 
 var temple = `<!DOCTYPE html>
 <html lang="en">
