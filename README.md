@@ -5,8 +5,17 @@
 Поддержанные языки программирования:
 * Python
 
+## Установка
+
+Требуются установленные go1.11+ и python3.6+.
+
+```bash
+git clone https://github.com/AleksMa/GraphStealChecker.git
+pip install -r requirements.txt
+```
+
 ## Использование
 
 ```bash
- go build -o ./bin/main main.go && ./bin/main -p1=./data/prog1.py -p2=./prog2.py -s=0.7 -t=5 -l=0.99
+go build -o ./bin/main main.go && ./bin/main -p=8080
 ```

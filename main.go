@@ -7,36 +7,23 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/AleksMa/GraphStealChecker/check"
 	"github.com/AleksMa/GraphStealChecker/net"
 )
 
-var (
-	SubgraphSize float64
-	Likelihood   float64
-	TimeLimit    int
-
-	//NodeFunctionsComp []*NodeComp
-	//LineFunctionsComp []*FuncsComp
-	//
-	//Files [][]CodeLine = make([][]CodeLine, 2)
-)
-
-func ParseArgs() {
-	subgraphSize := flag.Float64("s", 0.9, "minimum common subgraph size")
-	timeLimit := flag.Int("t", 10, "time limit on subgraph isomorphism")
-	likelihoodLevel := flag.Float64("l", 0.995, "level of likelihood")
+func ParseArgs() (port int) {
+	portArg := flag.Int("p", 8181, "service port")
 	flag.Parse()
 
-	TimeLimit = *timeLimit
-	SubgraphSize = *subgraphSize
-	Likelihood = *likelihoodLevel
+	port = *portArg
+	return
 }
 
 func main() {
-	ParseArgs()
+	port := ParseArgs()
 	path, err := os.Getwd()
 
 	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
@@ -50,9 +37,40 @@ func main() {
 			programs[i] = path + "/temp/" + program
 		}
 
+		var (
+			limit        = 5
+			subgraphSize = 0.7
+			likelihood   = 0.99
+			err          error
+		)
+		limitArg := r.FormValue("limit")
+		if len(limitArg) != 0 {
+			limit, err = strconv.Atoi(limitArg)
+			if err != nil {
+				log.Fatal("time limit parse:", err)
+			}
+		}
+
+		subgraphArg := r.FormValue("subgraph")
+		if len(subgraphArg) != 0 {
+			subgraphSize, err = strconv.ParseFloat(subgraphArg, 64)
+			if err != nil {
+				log.Fatal("subgraph size parse:", err)
+			}
+		}
+
+		likelihoodArg := r.FormValue("likelihood")
+		if len(likelihoodArg) != 0 {
+			likelihood, err = strconv.ParseFloat(likelihoodArg, 64)
+			if err != nil {
+				log.Fatal("time limit parse:", err)
+			}
+		}
+		fmt.Println(subgraphSize, limit, likelihood)
+
 		now := time.Now()
 
-		files := check.Check(path, programs, SubgraphSize, TimeLimit, Likelihood)
+		files := check.Check(path, programs, subgraphSize, limit, likelihood)
 		fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
 
 		tmpl, err := template.New("tmpl").Parse(net.CheckTemplate)
@@ -79,8 +97,8 @@ func main() {
 		}
 	})
 
-	fmt.Println("http://127.0.0.1:8181")
-	err = http.ListenAndServe(":8181", nil)
+	fmt.Printf("http://127.0.0.1:%v\n", port)
+	err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -66,6 +66,18 @@ var StartTemplate = `
 		<input type="file" id="p2" name="p2">
 	</div>
 	<div>
+		Time limit:
+		<input type="text" id="limit" name="limit" value="5">
+	</div>
+	<div>
+		Subgraph size:
+		<input type="text" id="subgraph" name="subgraph" value="0.7">
+	</div>
+	<div>
+		Likelihood:
+		<input type="text" id="likelihood" name="likelihood" value="0.9">
+	</div>
+	<div>
 		<input type="submit" value="Проверить!"/>
 	</div>
 </form>
