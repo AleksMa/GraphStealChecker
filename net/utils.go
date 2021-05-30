@@ -8,7 +8,7 @@ import (
 
 // This function returns the filename(to save in database) of the saved file
 // or an error if it occurs
-func FileUpload(r *http.Request, key string) (string, error) {
+func FileUpload(r *http.Request, path string, key string) (string, error) {
 	// ParseMultipartForm parses a request body as multipart/form-data
 	r.ParseMultipartForm(32 << 20)
 
@@ -20,7 +20,7 @@ func FileUpload(r *http.Request, key string) (string, error) {
 	defer file.Close() // Close the file when we finish
 
 	// This is path which we want to store the file
-	f, err := os.OpenFile(Path+"/temp/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(path+"/temp/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
 
 	if err != nil {
 		return "", err
