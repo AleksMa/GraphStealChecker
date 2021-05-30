@@ -4,3 +4,6 @@
 [submodule "PyMCIS"]
 	path = PyMCIS
 	url = https://github.com/AleksMa/Python_Maximum_Common_Induced_Subgraph
+[submodule "PyMCS"]
+	path = PyMCS
+	url = https://github.com/AleksMa/PyMCS

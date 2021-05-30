@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func Check(path string, programs []string, subgraphSize float64, timeLimit int, likelihood float64) [][]CodeLine {
+func Check(path string, programs []string, subgraphSize float64, timeLimit int, likelihood float64) Result {
 	var err error
 	pathGraphs := path + "/temp/"
 
@@ -36,8 +36,9 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 		lines := strings.Split(string(b), "\n")
 		for _, line := range lines {
 			files[i] = append(files[i], CodeLine{
-				Line:  line,
-				Color: "#000000",
+				Line:   line,
+				Color:  "#000000",
+				Parsed: false,
 			})
 		}
 	}
@@ -61,7 +62,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 		if err != nil {
 			log.Fatal("parser: ", err)
 		}
-		nodesAll[i], err = ParsePDG(pathDot)
+		nodesAll[i], err = ParsePDG(pathDot, &(files[i]))
 		if err != nil {
 			log.Fatal("parser: ", err)
 		}
@@ -93,7 +94,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 	}
 
 	b, err := exec.Command(
-		path+"/PyMCIS/run.py",
+		path+"/PyMCS/run.py",
 		path+"/temp/graph1.txt",
 		path+"/temp/graph2.txt",
 		fmt.Sprint(subgraphSize),
@@ -105,6 +106,8 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 	}
 
 	var nodeFunctionsComp []*NodeComp
+	var funcsPlag []PlagFunc
+	plagiarism := 0.0
 
 	for _, line := range strings.Split(string(b), "\n") {
 		elems := strings.Split(line, " ")
@@ -113,17 +116,23 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 			i2, _ := strconv.Atoi(elems[1])
 			likely, _ := strconv.ParseFloat(elems[2], 64)
 			nodeFunctionsComp = append(nodeFunctionsComp, ParseNodesComp(i1, i2, elems[3]))
-			if likely >= 0.0 {
+			if likely >= 0.1 {
 				fmt.Printf(
 					"%s vs %s: %v\n",
 					PrettifyFuncName(nodesAll[0][i1][0].Label),
 					PrettifyFuncName(nodesAll[1][i2][0].Label),
 					likely,
 				)
+				funcsPlag = append(funcsPlag, PlagFunc{
+					FuncLeft:   PrettifyFuncName(nodesAll[0][i1][0].Label),
+					FuncRight:  PrettifyFuncName(nodesAll[1][i2][0].Label),
+					Plagiarism: likely,
+				})
 			}
 		} else if len(elems) == 1 {
 			plag, _ := strconv.ParseFloat(elems[0], 64)
 			fmt.Println("Plagiarism:", plag)
+			plagiarism = plag
 			break
 		}
 	}
@@ -137,22 +146,39 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 			if start != -1 && end != -1 {
 				for j := start; j <= end; j++ {
 					linesComp1[j] = struct{}{}
-					files[0][j-1].Color = "#FF0000"
+					files[0][j-1].Color = "#b71c1c"
 				}
 			}
 			start, end = nodesAll[1][comp.Function][v].Start, nodesAll[1][comp.Function][v].End
 			if start != -1 && end != -1 {
 				for j := start; j <= end; j++ {
 					linesComp2[j] = struct{}{}
-					files[1][j-1].Color = "#FF0000"
+					files[1][j-1].Color = "#b71c1c"
 				}
 			}
 		}
-		//lineFunctionsComp = append(lineFunctionsComp, &FuncsComp{
-		//	FirstLines:  linesComp1,
-		//	SecondLines: linesComp2,
-		//})
 	}
 
-	return files
+	names := []string{
+		programs[0],
+		programs[1],
+	}
+	for i := range names {
+		splitted := strings.Split(names[i], "/")
+		if len(splitted) <= 1 {
+			splitted = strings.Split(names[i], "\\")
+			if len(splitted) <= 1 {
+				continue
+			}
+		}
+		names[i] = splitted[len(splitted)-1]
+	}
+	return Result{
+		LinesLeft:  files[0],
+		LinesRight: files[1],
+		NameLeft:   names[0],
+		NameRight:  names[1],
+		Plagiarism: plagiarism,
+		PlagFuncs:  funcsPlag,
+	}
 }

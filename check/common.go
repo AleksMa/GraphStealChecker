@@ -8,9 +8,25 @@ type OppositeCodes struct {
 	FileRight []CodeLine
 }
 
+type Result struct {
+	LinesLeft  []CodeLine
+	LinesRight []CodeLine
+	NameLeft string
+	NameRight string
+	Plagiarism float64
+	PlagFuncs []PlagFunc
+}
+
+type PlagFunc struct {
+	FuncLeft string
+	FuncRight string
+	Plagiarism float64
+}
+
 type CodeLine struct {
-	Line  string
-	Color string
+	Line   string
+	Color  string
+	Parsed bool
 }
 
 type NodeComp struct {

@@ -28,6 +28,11 @@ func main() {
 
 	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
 
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, fmt.Sprintf("http://127.0.0.1:%v", port), http.StatusPermanentRedirect)
+			return
+		}
+
 		programs := make([]string, 2)
 		for i, key := range []string{"p1", "p2"} {
 			program, err := net.FileUpload(r, path, key)
@@ -66,21 +71,17 @@ func main() {
 				log.Fatal("time limit parse:", err)
 			}
 		}
-		fmt.Println(subgraphSize, limit, likelihood)
 
 		now := time.Now()
 
-		files := check.Check(path, programs, subgraphSize, limit, likelihood)
+		result := check.Check(path, programs, subgraphSize, limit, likelihood)
 		fmt.Printf("Working %v seconds\n", int(time.Since(now).Seconds()))
 
 		tmpl, err := template.New("tmpl").Parse(net.CheckTemplate)
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = tmpl.Execute(w, check.OppositeCodes{
-			FileLeft:  files[0],
-			FileRight: files[1],
-		})
+		err = tmpl.Execute(w, result)
 		if err != nil {
 			log.Fatal(err)
 		}

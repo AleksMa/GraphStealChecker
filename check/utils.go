@@ -13,7 +13,6 @@ import (
 func ParseNodesComp(i1, i2 int, comp string) *NodeComp {
 	pairs := strings.Split(comp[1:len(comp)-1], ",")
 
-	fmt.Println(pairs)
 	compMap := make(map[int]int, len(pairs))
 	for _, pair := range pairs {
 		if len(pair) == 0 {
@@ -30,7 +29,7 @@ func ParseNodesComp(i1, i2 int, comp string) *NodeComp {
 	}
 }
 
-func ParsePDG(path string) ([][]*Node, error) {
+func ParsePDG(path string, file *[]CodeLine) ([][]*Node, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -45,7 +44,7 @@ func ParsePDG(path string) ([][]*Node, error) {
 		if sub == nil || sub.NumberNodes() == 0 {
 			continue
 		}
-		nodesMap := CreateGraph(sub)
+		nodesMap := CreateGraph(sub, file)
 		nodes := ReduceNodes(nodesMap)
 		if len(nodes) != 0 {
 			allNodes = append(allNodes, nodes)
@@ -74,7 +73,7 @@ func ReduceNodes(nodesMap map[string]*Node) []*Node {
 	return nodes
 }
 
-func CreateGraph(graph *cgraph.Graph) map[string]*Node {
+func CreateGraph(graph *cgraph.Graph, file *[]CodeLine) map[string]*Node {
 	graphNode := graph.FirstNode() // Первая Node всегда "Root"
 	parts := strings.Split(graphNode.Get("label"), "$")
 	label := parts[0]
@@ -91,6 +90,15 @@ func CreateGraph(graph *cgraph.Graph) map[string]*Node {
 			}
 			if err != nil || len(lineNoParts) <= 1 {
 				end = start
+			}
+		}
+	}
+	if start != -1 {
+		if end == -1 {
+			(*file)[start-1].Parsed = true
+		} else {
+			for i := start - 1; i <= end-1; i++ {
+				(*file)[i].Parsed = true
 			}
 		}
 	}
