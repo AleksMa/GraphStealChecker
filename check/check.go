@@ -38,7 +38,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 			files[i] = append(files[i], CodeLine{
 				Line:   line,
 				Color:  "#000000",
-				Parsed: false,
+				Parsed: true,
 			})
 		}
 	}
