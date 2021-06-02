@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// Основная функция проверки программ на предмет совпадений
+
 func Check(path string, programs []string, subgraphSize float64, timeLimit int, likelihood float64) Result {
 	var err error
 	pathGraphs := path + "/temp/"
@@ -30,7 +32,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 	}
 
 	var nodeFunctionsComp []*NodeComp
-	var funcsPlag []PlagFunc
+	var funcsPlag []PlagiarisedFunc
 	plagiarism := 0
 
 	for _, line := range strings.Split(string(b), "\n") {
@@ -47,7 +49,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 					PrettifyFuncName(nodesAll[1][i2][0].Label),
 					likely,
 				)
-				funcsPlag = append(funcsPlag, PlagFunc{
+				funcsPlag = append(funcsPlag, PlagiarisedFunc{
 					FuncLeft:   PrettifyFuncName(nodesAll[0][i1][0].Label),
 					FuncRight:  PrettifyFuncName(nodesAll[1][i2][0].Label),
 					Plagiarism: int(likely * 100),

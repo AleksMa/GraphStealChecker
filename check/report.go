@@ -1,16 +1,15 @@
 package check
 
 import (
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
 
+// Парсер изоморфизма общих подграфов пары функций i1 и i2, где i1 и i2 - номера функций первой и второй программы соответственно
 func ParseNodesComp(i1, i2 int, comp string) *NodeComp {
 	pairs := strings.Split(comp[1:len(comp)-1], ",")
 
@@ -30,6 +29,7 @@ func ParseNodesComp(i1, i2 int, comp string) *NodeComp {
 	}
 }
 
+// Конструктор "строк кода" с подцветкой (по умолчанию черный цвет для всех строк)
 func CreateCodeLines(programs []string) [][]CodeLine {
 	codeLines := make([][]CodeLine, 2)
 
@@ -58,34 +58,4 @@ func CreateCodeLines(programs []string) [][]CodeLine {
 		}
 	}
 	return codeLines
-}
-
-func CreateNodesSet(path string, programs []string, codeLines [][]CodeLine) [][][]*Node {
-	nodesAll := make([][][]*Node, 2)
-
-	for i := range nodesAll {
-		cmd := exec.Command(path+"/PyDG/parser.py", programs[i])
-
-		pathDot := fmt.Sprintf("%s/temp/test%v.dot", path, i+1)
-		outfile, err := os.Create(pathDot)
-		if err != nil {
-			log.Fatal("parser: ", err)
-		}
-		defer outfile.Close()
-		cmd.Stdout = outfile
-
-		err = cmd.Start()
-		if err != nil {
-			log.Fatal("parser: ", err)
-		}
-		err = cmd.Wait()
-		if err != nil {
-			log.Fatal("parser: ", err)
-		}
-		nodesAll[i], err = ParsePDG(pathDot, &(codeLines[i]))
-		if err != nil {
-			log.Fatal("parser: ", err)
-		}
-	}
-	return nodesAll
 }

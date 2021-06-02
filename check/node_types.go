@@ -5,24 +5,24 @@ import (
 	"strings"
 )
 
+// Типы ребер
 const (
-	ControlEdge EdgeType = iota
-	DataEdge
+	ControlEdge EdgeType = iota // Ребро зависимости управления
+	DataEdge                    // Ребро зависимости данных
 )
 
 const (
 	Root NodeType = iota
 	Call
-	Control // if, switch, for, while...
-	Branch  // then, else ...
+	Control // if, switch
+	Branch  // then, else, case ...
+	Cycle   // for, while...
 	Declaration
 	Assignment
 	Increment
 	Return
 	Expression
-	Jump
-	Label
-	SwitchCase // case or default
+	Jump // break, continue, goto, exit
 	Another
 	Count
 )
@@ -30,8 +30,10 @@ const (
 // Определение класса Node по Label
 func GetNodeType(inputLabel string) NodeType {
 	label := strings.ToLower(inputLabel)
-	controlRe := regexp.MustCompile(`^.*((if)|(for)|(while)).*$`)
+	controlRe := regexp.MustCompile(`^.*((if)|(switch)).*$`)
+	cycleRe := regexp.MustCompile(`^.*((for)|(while)).*$`)
 	branchRe := regexp.MustCompile(`^.*((then)|(else)|(loop)).*$`)
+	jumpRe := regexp.MustCompile(`^.*((break)|(continue)|(goto)|(exit)).*$`)
 	incrementRe := regexp.MustCompile(`^(.*\+\+.*)|(.*--.*)|(.*\+=.*)|(.*-=.*)|(.*/=.*)|(.*\*=.*)$`)
 	expressionRe := regexp.MustCompile(`^.*[+\-*/%^~].*$`)
 	callRe := regexp.MustCompile(`^\w+\(.*\)$`)
@@ -40,8 +42,12 @@ func GetNodeType(inputLabel string) NodeType {
 	switch {
 	case controlRe.MatchString(label):
 		return Control
+	case cycleRe.MatchString(label):
+		return Cycle
 	case branchRe.MatchString(label):
 		return Branch
+	case jumpRe.MatchString(label):
+		return Jump
 	case incrementRe.MatchString(label):
 		return Increment
 	case expressionRe.MatchString(label):
