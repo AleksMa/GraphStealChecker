@@ -110,12 +110,12 @@ var StartTemplate = `
 <form action="/check" method="POST" enctype="multipart/form-data">
 
 	<div class="field__wrapper">
-		<input name="p1" type="file" id="p1" class="field field__file">
+		<input name="p1" type="file" id="p1" class="field field__file" accept=".py">
 		<label class="field__file-wrapper" for="p1">
 			<div class="field__file-fake">Файл не выбран</div>
 			<div class="field__file-button">Выбрать</div>
 		</label>
-		<input name="p2" type="file" id="p2" class="field field__file">
+		<input name="p2" type="file" id="p2" class="field field__file" accept=".py">
 		<label class="field__file-wrapper" for="p2">
 			<div class="field__file-fake">Файл не выбран</div>
 			<div class="field__file-button">Выбрать</div>
@@ -224,7 +224,8 @@ var CheckTemplate = `<!DOCTYPE html>
 	}	
 
 	.mb {
-		margin-bottom: 5px;
+		margin-top: 5px;
+		margin-bottom: 10px;
 	}
 
 	.mr {
@@ -235,8 +236,14 @@ var CheckTemplate = `<!DOCTYPE html>
 		margin: 10px;
 	}
 
+	h2 {
+		margin-top: 5px;
+		margin-bottom: 10px;
+	}
+
 	h3 {
-		margin-bottom: 5px;
+		margin-top: 5px;
+		margin-bottom: 10px;
 	}
 
 	h5 {
@@ -244,9 +251,9 @@ var CheckTemplate = `<!DOCTYPE html>
 	}
 </style>
 <body>
-<h3>Результат сравнения</h3>
+<h2>Результат сравнения</h2>
 <div class="mb">
-Общая доля заимствований: {{ .Plagiarism }}
+Общая доля заимствований: {{ .Plagiarism }}%
 </div>
 <div class="mb">
 <h3> Заимствования по функциям: </h3>
@@ -260,7 +267,7 @@ var CheckTemplate = `<!DOCTYPE html>
 		{{ .FuncRight }}
 		</td>
 		<td>
-		{{ .Plagiarism }}
+		{{ .Plagiarism }}%
 		</td>
 	  </tr>
 	{{end}}
