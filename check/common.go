@@ -1,5 +1,7 @@
 package check
 
+import "html/template"
+
 type EdgeType int
 type NodeType int
 
@@ -11,20 +13,20 @@ type OppositeCodes struct {
 type Result struct {
 	LinesLeft  []CodeLine
 	LinesRight []CodeLine
-	NameLeft string
-	NameRight string
-	Plagiarism float64
-	PlagFuncs []PlagFunc
+	NameLeft   string
+	NameRight  string
+	Plagiarism int
+	PlagFuncs  []PlagFunc
 }
 
 type PlagFunc struct {
-	FuncLeft string
-	FuncRight string
-	Plagiarism float64
+	FuncLeft   string
+	FuncRight  string
+	Plagiarism int
 }
 
 type CodeLine struct {
-	Line   string
+	Line   template.HTML
 	Color  string
 	Parsed bool
 }

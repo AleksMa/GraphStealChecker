@@ -1,33 +1,17 @@
 package check
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
 )
-
-func ParseNodesComp(i1, i2 int, comp string) *NodeComp {
-	pairs := strings.Split(comp[1:len(comp)-1], ",")
-
-	compMap := make(map[int]int, len(pairs))
-	for _, pair := range pairs {
-		if len(pair) == 0 {
-			continue
-		}
-		kv := strings.Split(pair, ":")
-		k, _ := strconv.Atoi(kv[0])
-		v, _ := strconv.Atoi(kv[1])
-		compMap[k] = v
-	}
-	return &NodeComp{
-		Function: i2,
-		Comp:     compMap,
-	}
-}
 
 func ParsePDG(path string, file *[]CodeLine) ([][]*Node, error) {
 	b, err := ioutil.ReadFile(path)
@@ -216,4 +200,30 @@ func StringifyNodes(nodesAll [][]*Node) string {
 
 func PrettifyFuncName(label string) string {
 	return fmt.Sprintf("%60s     ", label[10:])
+}
+
+func WriteInnerGraph(pathGraphs string, nodesAll [][][]*Node) {
+	for i, nodes := range nodesAll {
+		graph := StringifyNodes(nodes)
+
+		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
+		if err != nil {
+			log.Fatal("txt output: ", err)
+		}
+
+		w := bufio.NewWriter(fo)
+		_, err = w.Write([]byte(graph))
+		if err != nil {
+			log.Fatal("txt output: ", err)
+		}
+
+		err = w.Flush()
+		if err != nil {
+			log.Fatal("txt output: ", err)
+		}
+
+		if err := fo.Close(); err != nil {
+			log.Fatal("txt output: ", err)
+		}
+	}
 }
