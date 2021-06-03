@@ -14,7 +14,7 @@ import (
 )
 
 func ParseArgs() (port int) {
-	portArg := flag.Int("p", 8181, "service port")
+	portArg := flag.Int("p", 8080, "service port")
 	flag.Parse()
 
 	port = *portArg

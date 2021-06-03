@@ -40,6 +40,11 @@ type NodeComp struct {
 	Comp     map[int]int
 }
 
+type CompWeight struct {
+	Function int
+	Weight   float64
+}
+
 // Внутреннее представление ребер графа зависимости программы
 type Edge struct {
 	Destination *Node

@@ -12,7 +12,11 @@ import (
 // Преобразование внутреннего формата PDG в формат, понятный PyMCS
 // t
 // v <vertex_number> <vertex_attribute>
+// vertexes...
 // e <edge_source> <edge_dest> <edge_attribute>
+// edges...
+// t
+// another subgraphs...
 func StringifyNodes(nodesAll [][]*Node) string {
 	output := "t\n"
 	for _, nodes := range nodesAll {

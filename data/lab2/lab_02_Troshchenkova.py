@@ -6,22 +6,25 @@ from pyglet.gl import *
 from math import *
 import pyglet
 
-window = pyglet.window.Window(500, 500, resizable=True)
-window.set_minimum_size(100, 100)
-window.set_maximum_size(700, 700)
-glClearColor(0, 0, 0, 1)
-colors = [[0.6, 0.14, 0.14], [0.22, 0.2, 0.27], [0.4, 0.2, 0.27], [0.2, 0.14, 0.27], [0.2, 0.27, 0.27],
-          [0.1, 0.2, 0.11]]
-vertex = [[[-0.1, -0.1, 0.1], [-0.1, -0.1, -0.1], [0.1, -0.1, -0.1], [0.1, -0.1, 0.1]],
-          [[-0.1, -0.1, -0.1], [-0.1, 0.1, -0.1], [0.1, 0.1, -0.1], [0.1, -0.1, -0.1]],
-          [[-0.1, -0.1, 0.1], [-0.1, -0.1, -0.1], [-0.1, 0.1, -0.1], [-0.1, 0.1, 0.1]],
-          [[0.1, -0.1, 0.1], [0.1, -0.1, -0.1], [0.1, 0.1, -0.1], [0.1, 0.1, 0.1]],
-          [[-0.1, 0.1, 0.1], [-0.1, 0.1, -0.1], [0.1, 0.1, -0.1], [0.1, 0.1, 0.1]],
-          [[-0.1, -0.1, 0.1], [-0.1, 0.1, 0.1], [0.1, 0.1, 0.1], [0.1, -0.1, 0.1]]]
-pos = [0, 0, 0]
-fi = [0, 0, 0]
-k = 1.8
-cubeModeSec = GL_FILL
+def main():
+    window = pyglet.window.Window(500, 500, resizable=True)
+    window.set_minimum_size(100, 100)
+    window.set_maximum_size(700, 700)
+
+    glClearColor(0, 0, 0, 1)
+    colors = [[0.6, 0.14, 0.14], [0.22, 0.2, 0.27], [0.4, 0.2, 0.27], [0.2, 0.14, 0.27], [0.2, 0.27, 0.27],
+              [0.1, 0.2, 0.11]]
+    vertex = [[[-0.1, -0.1, 0.1], [-0.1, -0.1, -0.1], [0.1, -0.1, -0.1], [0.1, -0.1, 0.1]],
+              [[-0.1, -0.1, -0.1], [-0.1, 0.1, -0.1], [0.1, 0.1, -0.1], [0.1, -0.1, -0.1]],
+              [[-0.1, -0.1, 0.1], [-0.1, -0.1, -0.1], [-0.1, 0.1, -0.1], [-0.1, 0.1, 0.1]],
+              [[0.1, -0.1, 0.1], [0.1, -0.1, -0.1], [0.1, 0.1, -0.1], [0.1, 0.1, 0.1]],
+              [[-0.1, 0.1, 0.1], [-0.1, 0.1, -0.1], [0.1, 0.1, -0.1], [0.1, 0.1, 0.1]],
+              [[-0.1, -0.1, 0.1], [-0.1, 0.1, 0.1], [0.1, 0.1, 0.1], [0.1, -0.1, 0.1]]]
+    pos = [0, 0, 0]
+    fi = [0, 0, 0]
+    k = 1.8
+    cubeModeSec = GL_FILL
+    pyglet.app.run()
 
 
 def drawCube(mode, first, second, third, fourth, color):
@@ -42,29 +45,6 @@ def coordsCube(painted):
     drawCube(painted, vertex[3][0], vertex[3][1], vertex[3][2], vertex[3][3], colors[3])  # Right
     drawCube(painted, vertex[4][0], vertex[4][1], vertex[4][2], vertex[4][3], colors[4])  # Top
     drawCube(painted, vertex[5][0], vertex[5][1], vertex[5][2], vertex[5][3], colors[5])  # Front
-
-
-def staticCube():
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glPushMatrix()
-    glTranslated(-0.5, -0.5, -0.3)
-    glScaled(0.5, 0.5, 0.5)
-    coordsCube(GL_LINE)
-    glPopMatrix()
-
-
-def nonStaticCube():
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glPushMatrix()
-    glTranslated(0 + pos[0], 0 + pos[1], -0.3 + pos[2])
-    glRotated(fi[0], 1, 0, 0)
-    glRotated(fi[1], 0, 1, 0)
-    glRotated(fi[2], 0, 0, 1)
-    glScaled(k, k, k)
-    coordsCube(cubeModeSec)
-    glPopMatrix()
 
 
 @window.event
@@ -137,5 +117,5 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.DOWN:
         k -= 0.3
 
-
-pyglet.app.run()
+if __name__ == "__main__":
+    main()

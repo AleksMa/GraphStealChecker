@@ -3,18 +3,16 @@ from pyglet.gl import *
 from pyglet.window import key, mouse
 import math as m
 
-S = 600
-c = 0.5
-skeleton = False
-colors = [[1,0,0], [0,1,0], [0,0,1], [1,1,1], [1,1,0], [1,0.64,0], [0,1,1]]
-sides = [[c,c,c], [-c,c,c], [-c,-c,c], [c,-c,c],
-         [c,-c,-c], [-c,-c,-c], [-c,c,-c], [c,c,-c]]
-coords = [2,2,0]
-rotation = [0]*3
-anti_resize = 1
+def main():
+    S = 600
+    c = 0.5
+    sides = [[c,c,c], [-c,c,c], [-c,-c,c], [c,-c,c],
+             [c,-c,-c], [-c,-c,-c], [-c,c,-c], [c,c,-c]]
 
-win = pgl.window.Window(S, S, resizable=True)
-win.set_minimum_size(200, 200)
+    win = pgl.window.Window(S, S, resizable=True)
+    win.set_minimum_size(200, 200)
+    pgl.app.run()
+
 
 def drawCube(c, s1, s2, s3, s4):
     glBegin(GL_POLYGON)
@@ -34,22 +32,6 @@ def drawSkeletonCube(s1, s2, s3, s4):
     glVertex3f(*s4)
     glEnd()
 
-def useful_function():
-    drawCube(colors[0], sides[0], sides[1], sides[2], sides[3])  
-    drawCube(colors[1], sides[1], sides[2], sides[5], sides[6])
-    drawCube(colors[2], sides[0], sides[3], sides[4], sides[7]) 
-    drawCube(colors[3], sides[0], sides[1], sides[6], sides[7])
-    drawCube(colors[4], sides[2], sides[3], sides[4], sides[5])
-    drawCube(colors[5], sides[4], sides[5], sides[6], sides[7])
-
-def draw_skeleton():
-    drawSkeletonCube(sides[0], sides[1], sides[2], sides[3])  
-    drawSkeletonCube(sides[1], sides[2], sides[5], sides[6])
-    drawSkeletonCube(sides[0], sides[3], sides[4], sides[7]) 
-    drawSkeletonCube(sides[0], sides[1], sides[6], sides[7])
-    drawSkeletonCube(sides[2], sides[3], sides[4], sides[5])
-    drawSkeletonCube(sides[4], sides[5], sides[6], sides[7])
-
 @win.event
 def on_draw():
     win.clear()
@@ -61,7 +43,7 @@ def on_draw():
         glViewport(0, 0, win.width, win.width)
 
     glMatrixMode(GL_PROJECTION)
-    
+
     gluPerspective(60, anti_resize, 1, 1000)
 
     coef = 0.5
@@ -78,7 +60,7 @@ def on_draw():
     glTranslatef(-1, -1, -0.5)
     glScalef(0.2, 0.2, 0.2)
     useful_function()
-    
+
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glTranslatef(coords[0] - 2, coords[1] - 2, coords[2] - 0.3)
@@ -88,9 +70,9 @@ def on_draw():
     glRotatef(rotation[2], 0, 0, 1)
     if skeleton:
         draw_skeleton()
-    else:    
+    else:
         useful_function()
-    
+
 @win.event
 def on_resize(width, height):
     global anti_resize
@@ -129,8 +111,5 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.SPACE:
         skeleton = not skeleton
 
-@win.event
-def on_mouse_press(x, y, button, modifiers):
-    pass
-
-pgl.app.run()
+if __name__ == "__main__":
+    main()

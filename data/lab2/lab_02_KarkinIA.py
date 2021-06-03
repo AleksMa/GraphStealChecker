@@ -4,11 +4,6 @@ import glfw
 from OpenGL.GL import *
 import time
 
-xpos = ypos = zpos = 0
-oxtr = oytr = oztr = 0
-xscale = yscale = zscale = scale = 1
-colormode = True
-
 
 def moveevent(window, key, scancode, action, mods):
     global xpos, ypos, zpos
@@ -58,9 +53,6 @@ def moveevent(window, key, scancode, action, mods):
         oxtr += 0.01
     if chr(key) == 'H':
         oxtr -= 0.01
-
-
-size_x, size_y = 450, 450
 
 
 def main():
