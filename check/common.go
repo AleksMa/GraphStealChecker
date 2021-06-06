@@ -2,50 +2,56 @@ package check
 
 import "html/template"
 
-type EdgeType int
+// Общие структуры, используемые при проверке
+
+// Отдельные типы для классов вершин и ребер графа зависимости программы
 type NodeType int
+type EdgeType int
 
-type OppositeCodes struct {
-	FileLeft  []CodeLine
-	FileRight []CodeLine
-}
-
+// Итоговый результат проверки, отображаемый на веб-странице
 type Result struct {
 	LinesLeft  []CodeLine
 	LinesRight []CodeLine
 	NameLeft   string
 	NameRight  string
 	Plagiarism int
-	PlagFuncs  []PlagFunc
+	PlagFuncs  []PlagiarisedFunc
 }
 
-type PlagFunc struct {
+// Структура, инкапсулирующая процент схожести для наиболее близких функций
+type PlagiarisedFunc struct {
 	FuncLeft   string
 	FuncRight  string
 	Plagiarism int
 }
 
+// Структура, инкапсулирующая строку кода
+// Используется при отображении исходного текста на странице резальтатов
+// Включает цвет текста для подсветки совпавших участков
 type CodeLine struct {
 	Line   template.HTML
 	Color  string
 	Parsed bool
 }
 
+// Структура, инкапсулирующая отображение (изоморфизм) совпавших подграфов
 type NodeComp struct {
 	Function int
 	Comp     map[int]int
 }
 
-type FuncsComp struct {
-	FirstLines  map[int]struct{}
-	SecondLines map[int]struct{}
+type CompWeight struct {
+	Function int
+	Weight   float64
 }
 
+// Внутреннее представление ребер графа зависимости программы
 type Edge struct {
 	Destination *Node
 	Type        EdgeType
 }
 
+// Внутреннее представление вершин графа зависимости программы
 type Node struct {
 	Type   NodeType
 	Number int

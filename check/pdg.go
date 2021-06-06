@@ -1,11 +1,11 @@
 package check
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -13,6 +13,40 @@ import (
 	"github.com/goccy/go-graphviz/cgraph"
 )
 
+// Инструментарий преобразования dot-формата PDG во внутреннее представление
+
+// Парсер dot-формата
+func CreateNodesSet(path string, programs []string, codeLines [][]CodeLine) [][][]*Node {
+	nodesAll := make([][][]*Node, 2)
+
+	for i := range nodesAll {
+		cmd := exec.Command(path+"/PyDG/parser.py", programs[i])
+
+		pathDot := fmt.Sprintf("%s/temp/test%v.dot", path, i+1)
+		outfile, err := os.Create(pathDot)
+		if err != nil {
+			log.Fatal("parser: ", err)
+		}
+		defer outfile.Close()
+		cmd.Stdout = outfile
+
+		err = cmd.Start()
+		if err != nil {
+			log.Fatal("parser: ", err)
+		}
+		err = cmd.Wait()
+		if err != nil {
+			log.Fatal("parser: ", err)
+		}
+		nodesAll[i], err = ParsePDG(pathDot, &(codeLines[i]))
+		if err != nil {
+			log.Fatal("parser: ", err)
+		}
+	}
+	return nodesAll
+}
+
+// Выделение связных компонент в PDG
 func ParsePDG(path string, file *[]CodeLine) ([][]*Node, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -37,26 +71,7 @@ func ParsePDG(path string, file *[]CodeLine) ([][]*Node, error) {
 	return allNodes, nil
 }
 
-func ReduceNodes(nodesMap map[string]*Node) []*Node {
-	var nodes []*Node
-	nodesIndex := make(map[int]*Node, len(nodesMap))
-	for _, node := range nodesMap {
-		nodesIndex[node.Number] = node
-	}
-	for i := 0; i < len(nodesIndex); i++ {
-		node, ok := nodesIndex[i]
-		if !ok {
-			j := 1
-			for !ok {
-				node, ok = nodesIndex[i+j]
-				j++
-			}
-		}
-		nodes = append(nodes, node)
-	}
-	return nodes
-}
-
+// Конструктор связной компоненты
 func CreateGraph(graph *cgraph.Graph, file *[]CodeLine) map[string]*Node {
 	graphNode := graph.FirstNode() // Первая Node всегда "Root"
 	parts := strings.Split(graphNode.Get("label"), "$")
@@ -100,6 +115,7 @@ func CreateGraph(graph *cgraph.Graph, file *[]CodeLine) map[string]*Node {
 	return nodes
 }
 
+// Рекурсивная функция добавления узлов во внутреннее представление
 func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes map[string]*Node, baseNode *Node) {
 	actual := true
 	curEdgeGraph := graph.FirstOut(rootNodeGraph)
@@ -179,51 +195,23 @@ func AddNodes(graph *cgraph.Graph, rootNodeGraph *cgraph.Node, node *Node, nodes
 	}
 }
 
-func StringifyNodes(nodesAll [][]*Node) string {
-	output := "t\n"
-	for _, nodes := range nodesAll {
-		for i, node := range nodes {
-			output += fmt.Sprintf("v %v %v\n", i, node.Type)
-		}
-		for i, node := range nodes {
-			for _, edge := range node.Edges {
-				if i == edge.Destination.Number {
-					continue
-				}
-				output += fmt.Sprintf("e %v %v %v\n", i, edge.Destination.Number, edge.Type)
+// Перенумерация вершин "расширенными" натуральными числами (начиная с нуля)
+func ReduceNodes(nodesMap map[string]*Node) []*Node {
+	var nodes []*Node
+	nodesIndex := make(map[int]*Node, len(nodesMap))
+	for _, node := range nodesMap {
+		nodesIndex[node.Number] = node
+	}
+	for i := 0; i < len(nodesIndex); i++ {
+		node, ok := nodesIndex[i]
+		if !ok {
+			j := 1
+			for !ok {
+				node, ok = nodesIndex[i+j]
+				j++
 			}
 		}
-		output += "t\n"
+		nodes = append(nodes, node)
 	}
-	return output
-}
-
-func PrettifyFuncName(label string) string {
-	return fmt.Sprintf("%60s     ", label[10:])
-}
-
-func WriteInnerGraph(pathGraphs string, nodesAll [][][]*Node) {
-	for i, nodes := range nodesAll {
-		graph := StringifyNodes(nodes)
-
-		fo, err := os.Create(pathGraphs + fmt.Sprintf("graph%v.txt", i+1))
-		if err != nil {
-			log.Fatal("txt output: ", err)
-		}
-
-		w := bufio.NewWriter(fo)
-		_, err = w.Write([]byte(graph))
-		if err != nil {
-			log.Fatal("txt output: ", err)
-		}
-
-		err = w.Flush()
-		if err != nil {
-			log.Fatal("txt output: ", err)
-		}
-
-		if err := fo.Close(); err != nil {
-			log.Fatal("txt output: ", err)
-		}
-	}
+	return nodes
 }

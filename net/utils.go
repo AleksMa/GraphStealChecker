@@ -8,32 +8,30 @@ import (
 	"strconv"
 )
 
-// This function returns the filename(to save in database) of the saved file
-// or an error if it occurs
+// Загрузка файла из тела запроса
 func FileUpload(r *http.Request, path string, key string) (string, error) {
-	// ParseMultipartForm parses a request body as multipart/form-data
 	r.ParseMultipartForm(32 << 20)
 
-	file, handler, err := r.FormFile(key) // Retrieve the file from form data
+	file, handler, err := r.FormFile(key)
 
 	if err != nil {
 		return "", err
 	}
-	defer file.Close() // Close the file when we finish
+	defer file.Close()
 
-	// This is path which we want to store the file
+	os.Mkdir(path+"/temp/", os.ModePerm)
+
 	f, err := os.OpenFile(path+"/temp/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
 
 	if err != nil {
 		return "", err
 	}
 
-	// Copy the file to the destination path
-	io.Copy(f, file)
-
-	return handler.Filename, nil
+	_, err = io.Copy(f, file)
+	return handler.Filename, err
 }
 
+// Парсинг параметров тела запроса
 func ParseArgs(r *http.Request, path string) ([]string, int, float64, float64) {
 	programs := make([]string, 2)
 	for i, key := range []string{"p1", "p2"} {

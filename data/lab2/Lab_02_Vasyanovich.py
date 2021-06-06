@@ -8,49 +8,52 @@ from pyglet.window import mouse
 from OpenGL.GLUT import *
 
 
-window = pyglet.window.Window(1000, 1000, resizable = True)
-window.set_minimum_size(144, 144)
-gl.glClearColor(0, 0.5, 0.8, 1)
-glutInit()
+def main():
+    window = pyglet.window.Window(1000, 1000, resizable = True)
+    window.set_minimum_size(144, 144)
+    gl.glClearColor(0, 0.5, 0.8, 1)
+    glutInit()
 
-Width = 1000
-Height = 1000
-ratio = 1
-pos = [0, 0, 0]
-rot = [0, 0, 0]
-isFramedMode = False
-colors = [[0.1, 0.7, 0.1], [0.25, 0.5, 0.25], [0.4, 0.1, 0.4], [0.55, 0.5, 0.55], [0.7, 0.1, 0.7], [0.85, 0.5, 0.85]]
-horizontal = 25
-vertical = 25
+    Width = 1000
+    Height = 1000
+    ratio = 1
+    pos = [0, 0, 0]
+    rot = [0, 0, 0]
+    isFramedMode = False
+    colors = [[0.1, 0.7, 0.1], [0.25, 0.5, 0.25], [0.4, 0.1, 0.4], [0.55, 0.5, 0.55], [0.7, 0.1, 0.7], [0.85, 0.5, 0.85]]
+    horizontal = 25
+    vertical = 25
 
 
-dodeccolors = [[0.2, 0.2, 0.2], [0.25, 0.25, 0.25], [0.3, 0.3, 0.3],
-               [0.35, 0.35, 0.35], [0.4, 0.4, 0.4], [0.45, 0.45, 0.45],
-               [0.5, 0.5, 0.5], [0.55, 0.55, 0.55], [0.6, 0.6, 0.6],
-               [0.65, 0.65, 0.65], [0.7, 0.7, 0.7], [0.75, 0.75, 0.75]]
-alpha = sqrt(2.0 / (3.0 + sqrt(5.0)))
-beta = 1.0 + sqrt(6.0 / (3.0 + sqrt(5.0)) - 2.0 + 2.0 * sqrt(2.0 / (3.0 + sqrt(5.0))))
-dodec = [[i for i in range(3)] for j in range(20)]
-dodec[0][0] = -alpha; dodec[0][1] = 0; dodec[0][2] = beta
-dodec[1][0] = alpha; dodec[1][1] = 0; dodec[1][2] = beta
-dodec[2][0] = -1; dodec[2][1] = -1; dodec[2][2] = -1
-dodec[3][0] = -1; dodec[3][1] = -1; dodec[3][2] = 1
-dodec[4][0] = -1; dodec[4][1] = 1; dodec[4][2] = -1
-dodec[5][0] = -1; dodec[5][1] = 1; dodec[5][2] = 1
-dodec[6][0] = 1; dodec[6][1] = -1; dodec[6][2] = -1
-dodec[7][0] = 1; dodec[7][1] = -1; dodec[7][2] = 1
-dodec[8][0] = 1; dodec[8][1] = 1; dodec[8][2] = -1
-dodec[9][0] = 1; dodec[9][1] = 1; dodec[9][2] = 1
-dodec[10][0] = beta; dodec[10][1] = alpha; dodec[10][2] = 0
-dodec[11][0] = beta; dodec[11][1] = -alpha; dodec[11][2] = 0
-dodec[12][0] = -beta; dodec[12][1] = alpha; dodec[12][2] = 0
-dodec[13][0] = -beta; dodec[13][1] = -alpha; dodec[13][2] = 0
-dodec[14][0] = -alpha; dodec[14][1] = 0; dodec[14][2] = -beta
-dodec[15][0] = alpha; dodec[15][1] = 0; dodec[15][2] = -beta
-dodec[16][0] = 0; dodec[16][1] = beta; dodec[16][2] = alpha
-dodec[17][0] = 0; dodec[17][1] = beta; dodec[17][2] = -alpha
-dodec[18][0] = 0; dodec[18][1] = -beta; dodec[18][2] = alpha
-dodec[19][0] = 0; dodec[19][1] = -beta; dodec[19][2] = -alpha
+    dodeccolors = [[0.2, 0.2, 0.2], [0.25, 0.25, 0.25], [0.3, 0.3, 0.3],
+                   [0.35, 0.35, 0.35], [0.4, 0.4, 0.4], [0.45, 0.45, 0.45],
+                   [0.5, 0.5, 0.5], [0.55, 0.55, 0.55], [0.6, 0.6, 0.6],
+                   [0.65, 0.65, 0.65], [0.7, 0.7, 0.7], [0.75, 0.75, 0.75]]
+    alpha = sqrt(2.0 / (3.0 + sqrt(5.0)))
+    beta = 1.0 + sqrt(6.0 / (3.0 + sqrt(5.0)) - 2.0 + 2.0 * sqrt(2.0 / (3.0 + sqrt(5.0))))
+    dodec = [[i for i in range(3)] for j in range(20)]
+    dodec[0][0] = -alpha; dodec[0][1] = 0; dodec[0][2] = beta
+    dodec[1][0] = alpha; dodec[1][1] = 0; dodec[1][2] = beta
+    dodec[2][0] = -1; dodec[2][1] = -1; dodec[2][2] = -1
+    dodec[3][0] = -1; dodec[3][1] = -1; dodec[3][2] = 1
+    dodec[4][0] = -1; dodec[4][1] = 1; dodec[4][2] = -1
+    dodec[5][0] = -1; dodec[5][1] = 1; dodec[5][2] = 1
+    dodec[6][0] = 1; dodec[6][1] = -1; dodec[6][2] = -1
+    dodec[7][0] = 1; dodec[7][1] = -1; dodec[7][2] = 1
+    dodec[8][0] = 1; dodec[8][1] = 1; dodec[8][2] = -1
+    dodec[9][0] = 1; dodec[9][1] = 1; dodec[9][2] = 1
+    dodec[10][0] = beta; dodec[10][1] = alpha; dodec[10][2] = 0
+    dodec[11][0] = beta; dodec[11][1] = -alpha; dodec[11][2] = 0
+    dodec[12][0] = -beta; dodec[12][1] = alpha; dodec[12][2] = 0
+    dodec[13][0] = -beta; dodec[13][1] = -alpha; dodec[13][2] = 0
+    dodec[14][0] = -alpha; dodec[14][1] = 0; dodec[14][2] = -beta
+    dodec[15][0] = alpha; dodec[15][1] = 0; dodec[15][2] = -beta
+    dodec[16][0] = 0; dodec[16][1] = beta; dodec[16][2] = alpha
+    dodec[17][0] = 0; dodec[17][1] = beta; dodec[17][2] = -alpha
+    dodec[18][0] = 0; dodec[18][1] = -beta; dodec[18][2] = alpha
+    dodec[19][0] = 0; dodec[19][1] = -beta; dodec[19][2] = -alpha
+
+    pyglet.app.run()
 
 
 def which(mode, first, second, third, fourth, color):
@@ -339,4 +342,5 @@ def on_key_press(symbol, modifiers):
         vertical += 1
 
 
-pyglet.app.run()
+if __name__ == "__main__":
+    main()

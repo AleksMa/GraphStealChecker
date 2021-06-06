@@ -2,3 +2,5 @@
 ./temp/
 *.png
 *.dot
+.idea/
+.DS_Store/

@@ -3,6 +3,6 @@ pandas==1.2.2
 numpy==1.19.5
 matplotlib==3.3.4
 scipy==1.6.1
-astor==0.6.2
+astor==0.8.1
 graphviz==0.8.2
 mypy==0.580

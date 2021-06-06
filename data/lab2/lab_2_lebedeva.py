@@ -8,16 +8,26 @@ from pyglet.gl import *
 from math import *
 import pyglet
 
-window = pyglet.window.Window(500, 500, resizable=True)
-window.set_minimum_size(100, 100)
-glClearColor(1, 0.9, 0.95, 1)
-paintedUp = True
-colors = [[0.8, 0.7, 0.1], [0.25, 0.5, 0.25], [0.4, 0.3, 0.9], [0.1, 0.1, 0.55], [0.6, 0.3, 0.9], [0.75, 0.5, 0.65]]
-pos = [0, 0, 0]
-fi = [0, 0, 0]
-k = 1
-cubeMood = GL_FILL
-ratio = 1
+def main():
+    window = pyglet.window.Window(500, 500, resizable=True)
+    window.set_minimum_size(100, 100)
+    glClearColor(1, 0.9, 0.95, 1)
+    paintedUp = True
+    colors = [[0.8, 0.7, 0.1], [0.25, 0.5, 0.25], [0.4, 0.3, 0.9], [0.1, 0.1, 0.55], [0.6, 0.3, 0.9], [0.75, 0.5, 0.65]]
+    pos = [0, 0, 0]
+    fi = [0, 0, 0]
+    k = 1
+    cubeMood = GL_FILL
+    ratio = 1
+
+    masCor = TorCor()
+
+    incPos = 0.1
+    incK = 0.3
+    alfa = 5
+
+    pyglet.app.run()
+
 
 def cubeFace(mode, first, second, third, fourth, color):
     glPolygonMode(GL_FRONT_AND_BACK, mode)
@@ -157,9 +167,6 @@ def on_mouse_press(x, y, button, modifiers):
             cubeMood = GL_LINE
 
 
-incPos = 0.1
-incK = 0.3
-alfa = 5
 @window.event
 def on_key_press(symbol, modifiers):
     global pos
@@ -194,6 +201,5 @@ def on_key_press(symbol, modifiers):
         k -= incK
 
 
-
-
-pyglet.app.run()
+if __name__ == "__main__":
+    main()

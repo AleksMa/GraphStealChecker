@@ -3,56 +3,6 @@ import math
 from pyglet.gl import *
 from pyglet.window import key
 
-pos = [0, -20, -120]
-window = pyglet.window.Window(1000, 600)
-pyglet.gl.glClearColor(1, 1, 1, 0)
-start_sq = [-50, -40, -50,
-        -60, -40, -50,
-        -60, -50, -50,
-        -50, -50, -50,
-        -50, -40, -55,
-        -60, -40, -55,
-        -60, -50, -55,
-        -50, -50, -55]
-square = [-15, -15, -15,
-          15, -15, -15,
-          15, 15, -15,
-          -15, 15, -15,
-          -15, -15, 15,
-          15, -15, 15,
-          15, 15, 15,
-          -15, 15, 15]
-RGB_sq = (52, 179, 179)
-RGB = (179, 52, 113)
-steps_square_pol = [0, 1, 2, 0, 2, 3,
-                0, 1, 5, 0, 5, 4,
-                0, 3, 7, 0, 7, 4,
-                1, 2, 6, 1, 6, 5,
-                3, 2, 6, 3, 6, 7,
-                4, 5, 6, 4, 6, 7]
-steps_square_lines = [0, 1, 1, 2, 2, 3, 3, 0,
-                      4, 5, 5, 6, 6, 7, 7, 4,
-                      0, 4, 1, 5, 2, 6, 3, 7]
-angle = 0
-angle_x = 0
-angle_y = 0
-angle_z = 0
-xyz = [0, 0, 1]
-scalling = [1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0]
-main = [1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0]
-translatef = [1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0]
-three_dots =  False
-pol_not_lines = True
-
 
 @window.event
 def on_draw():
@@ -262,4 +212,5 @@ def mult_matrix(martix1, matrix2):
             matrix.append(number)
     return matrix
 
-pyglet.app.run()
+if __name__ == "__main__":
+    pyglet.app.run()
