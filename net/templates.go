@@ -90,7 +90,7 @@ var StartTemplate = `
                 Лимит времени проверки:
             </td>
             <td>
-                <input type="text" id="limit" name="limit" value="5">
+                <input type="text" id="limit" name="limit" value="20">
             </td>
         </tr>
         <tr>
@@ -98,7 +98,7 @@ var StartTemplate = `
                 Минимальная доля вершин при сравнении:
             </td>
             <td>
-                <input type="text" id="subgraph" name="subgraph" value="0.7">
+                <input type="text" id="subgraph" name="subgraph" value="0.9">
             </td>
         </tr>
         <tr>
@@ -106,7 +106,7 @@ var StartTemplate = `
                 Уровень правдоподобия:
             </td>
             <td>
-                <input type="text" id="likelihood" name="likelihood" value="0.9">
+                <input type="text" id="likelihood" name="likelihood" value="0.99">
             </td>
         </tr>
     </table>

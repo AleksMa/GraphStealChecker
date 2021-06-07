@@ -1,10 +1,21 @@
-a = 2
-b = 3
-c = a + b
-i = 0
-while i < 10:
-    if i > 3:
-        print(a)
-    else:
-        print(c)
-    i+=1
+import time
+
+
+def main():
+    m = 2
+    n = 3
+    uselessVar = True
+    if uselessVar:
+        time.time()
+    k = m + n + (6 + 2 * 11) / 14 - 2
+    j = 0
+    while j < 10:
+        if j > 3:
+            print(m)
+        else:
+            print(k)
+        j += 1
+
+
+if __name__ == "__main__":
+    main()

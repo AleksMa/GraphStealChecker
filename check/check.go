@@ -1,17 +1,18 @@
 package check
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Основная функция проверки программ на предмет совпадений
 
 func Check(path string, programs []string, subgraphSize float64, timeLimit int, likelihood float64) Result {
-	var err error
 	pathGraphs := path + "/temp/"
 
 	codeLines := CreateCodeLines(programs)
@@ -19,16 +20,35 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 
 	WriteInnerGraph(pathGraphs, nodesAll)
 
-	b, err := exec.Command(
+	now := time.Now()
+
+	cmd := exec.Command(
 		path+"/PyMCS/run.py",
 		path+"/temp/graph1.txt",
 		path+"/temp/graph2.txt",
 		fmt.Sprint(subgraphSize),
 		fmt.Sprint(timeLimit),
-		fmt.Sprint(likelihood)).
-		Output()
-	if err != nil {
-		log.Fatal("mcis: ", err)
+		fmt.Sprint(likelihood))
+
+	var b bytes.Buffer
+	cmd.Stdout = &b
+
+	cmd.Start()
+
+	done := make(chan error)
+	go func() { done <- cmd.Wait() }()
+
+	timeout := time.After(time.Duration(timeLimit) * time.Second)
+
+	select {
+	case <-timeout:
+		// Timeout happened first, kill the process and print a message.
+		cmd.Process.Kill()
+	case err := <-done:
+		// Command completed before timeout. Print output and error if it exists.
+		if err != nil {
+			log.Fatal("mcis: ", err)
+		}
 	}
 
 	nodeFunctionsComp := map[int]*NodeComp{}
@@ -38,7 +58,7 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 	firstToSecond := map[int]CompWeight{}
 	secondToFirst := map[int]int{}
 
-	for _, line := range strings.Split(string(b), "\n") {
+	for _, line := range strings.Split(string(b.Bytes()), "\n") {
 		elems := strings.Split(line, " ")
 		if len(elems) == 4 {
 			i1, _ := strconv.Atoi(elems[0])
@@ -74,11 +94,13 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 			}
 		} else if len(elems) == 1 {
 			plag, _ := strconv.ParseFloat(elems[0], 64)
-			fmt.Println("Plagiarism:", plag)
 			plagiarism = int(plag * 100)
 			break
 		}
 	}
+
+	fmt.Println("Plagiarism: ", plagiarism)
+	fmt.Println(int(time.Since(now).Seconds()))
 
 	for i, comp := range nodeFunctionsComp {
 		linesComp := make(map[int][]int, len(comp.Comp))
