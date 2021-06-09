@@ -4,14 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"math/rand"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// Основная функция проверки программ на предмет совпадений
+var colors = []string{
+	"#218AB5",
+	"#B71C1C",
+	"#00c853",
+	"#38006b",
+	"#ff6f00",
+	"#f50057",
+	"#311b92",
+}
 
+// Основная функция проверки программ на предмет совпадений
 func Check(path string, programs []string, subgraphSize float64, timeLimit int, likelihood float64) Result {
 	pathGraphs := path + "/temp/"
 
@@ -103,6 +113,9 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 	fmt.Println(int(time.Since(now).Seconds()))
 
 	for i, comp := range nodeFunctionsComp {
+
+		color := colors[rand.Intn(len(colors))]
+
 		linesComp := make(map[int][]int, len(comp.Comp))
 		first := true
 		for k, v := range comp.Comp {
@@ -118,13 +131,13 @@ func Check(path string, programs []string, subgraphSize float64, timeLimit int, 
 							linesComp[j] = append(linesComp[j], l)
 							if first {
 								if left, ok := firstToSecond[i]; ok && left.Function == comp.Function {
-									codeLines[1][l-1].Color = "#b71c1c"
+									codeLines[1][l-1].Color = color
 								}
 							}
 						}
 					}
 					if left, ok := firstToSecond[i]; ok && left.Function == comp.Function {
-						codeLines[0][j-1].Color = "#b71c1c"
+						codeLines[0][j-1].Color = color
 					}
 					first = false
 				}
